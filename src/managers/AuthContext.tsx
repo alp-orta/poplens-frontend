@@ -1,9 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-
-interface User {
-  username: string;
-  token: string;
-}
+import { User } from '../models/User';
 
 interface AuthContextType {
   user: User | null;

@@ -1,4 +1,4 @@
-import { makeRequest } from "../apiClient";
+import { makeRequest } from "../managers/apiClient";
 import { LoginInfo } from "../models/auth/LoginInfo";
 import { RegisterInfo } from "../models/auth/RegisterInfo";
 

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthService from '../hooks/useAuthService';
 import styled from 'styled-components';
-import { useAuthContext } from '../AuthContext';
+import { useAuthContext } from '../managers/AuthContext';
+import { User } from '../models/User';
 
 const LoginContainer = styled.div`
   display: flex;
@@ -104,13 +105,18 @@ const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
     try {
       setIsLoading(true);
       setError("");
-      //const response = await authService.login({ username, password });
-      const response = { data: { token: 'fake-token' } };
-      const { token } = response.data;
-      login({ username, token });
+      const response = await authService.login({ username, password });
+      //const response = { data: { token: 'fake-token' } };
+      const { token, userId, profileId } = response.data;
+      const user: User = { username, token, userId, profileId };
+      login(user);
       navigate("/home");
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
