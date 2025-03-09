@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuthContext } from '../managers/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import logo from '../assets/PopLensLogo.png';
 import ReviewModal from './ReviewModal';
 
@@ -14,35 +14,17 @@ const LayoutContainer = styled.div`
   color: white;
   padding-left: 150px;
 `;
-
-const Sidebar = styled.div`
-  width: 275px;
-  padding: 20px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  border-right: 1px solid #38444d;
-`;
-
 const MainContent = styled.main`
   flex: 1;
   max-width: 600px;
   border-right: 1px solid #38444d;
+  margin-left: 275px; // Match Sidebar width
+  margin-right: 350px; // Match RightSidebar width
 `;
-
-const RightSidebar = styled.div`
-  width: 350px;
-  padding: 20px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-`;
-
 const SearchContainer = styled.div`
   position: relative;
   margin-bottom: 20px;
 `;
-
 const SearchBar = styled.input`
   width: 100%;
   padding: 12px 45px;
@@ -203,10 +185,72 @@ const DropdownItem = styled.button`
   }
 `;
 
+const SidebarCurtain = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  backdrop-filter: blur(4px);
+  background: rgba(21,32,43,0.7);
+  z-index: 10;
+`;
+
+// Add new styled component for main content login prompt
+const MainLoginPrompt = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 20px;
+
+  h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: white;
+  }
+`;
+const LoginLink = styled(Link)`
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(0deg, rgba(233,30,99,0.9), rgba(194,24,91,0.9));
+  color: white;
+  text-decoration: none;
+  border-radius: 25px;
+  font-weight: bold;
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+`;
+
+const Sidebar = styled.div`
+  width: 275px;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 150px; // Match the LayoutContainer padding-left
+  height: 100vh;
+  border-right: 1px solid #38444d;
+  overflow-y: auto; // Allow scrolling if content is too tall
+`;
+
+const RightSidebar = styled.div`
+  width: 350px;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  overflow-y: auto; // Allow scrolling if content is too tall
+`;
 const Layout: React.FC = () => {
   const { user, logout } = useAuthContext();
+  const location = useLocation();
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const isLoginPage = location.pathname === '/login';
 
   const handleLogout = () => {
     logout();
@@ -216,6 +260,9 @@ const Layout: React.FC = () => {
   return (
     <LayoutContainer>
       <Sidebar>
+        {!user && (
+          <SidebarCurtain />
+        )}
         <LogoContainer>
           <img src={logo} alt="PopLens Logo" />
         </LogoContainer>
@@ -271,9 +318,18 @@ const Layout: React.FC = () => {
         </LogButton>
       </Sidebar>
       <MainContent>
-        <Outlet />
+        {!user && !isLoginPage && (
+          <MainLoginPrompt>
+            <h2>Sign in to use all features</h2>
+            <LoginLink to="/login">Sign In</LoginLink>
+          </MainLoginPrompt>
+        )}
+        {(user || (!user && isLoginPage)) && <Outlet />}
       </MainContent>
       <RightSidebar>
+        {!user && (
+          <SidebarCurtain />
+        )}
         <SearchContainer>
           <SearchIcon>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
