@@ -92,6 +92,8 @@ const MediaContent = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;             // Add this
+  overflow: hidden;         // Add this
 `;
 
 const MediaInfo = styled.div`
@@ -106,6 +108,10 @@ const ReviewContent = styled.p`
   color: white;
   margin: 8px 0;
   line-height: 1.5;
+  word-wrap: break-word;      // Add this
+  overflow-wrap: break-word;  // Add this
+  max-width: 100%;           // Add this
+  white-space: pre-wrap;     // Add this
 `;
 interface MediaInfoProps {
   type: MediaType;

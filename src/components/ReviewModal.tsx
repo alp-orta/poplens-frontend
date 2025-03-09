@@ -75,8 +75,8 @@ const TypeButton = styled.button<{ active: boolean }>`
     right: 0;
     bottom: 0;
     background: ${props => props.active ?
-        'linear-gradient(0deg, rgba(233,30,99,0.8), rgba(233,30,99,0.4))' :
-        'linear-gradient(0deg, rgba(0,0,0,0.8), rgba(0,0,0,0.4))'};
+    'linear-gradient(0deg, rgba(233,30,99,0.8), rgba(233,30,99,0.4))' :
+    'linear-gradient(0deg, rgba(0,0,0,0.8), rgba(0,0,0,0.4))'};
   }
 `;
 
@@ -137,6 +137,16 @@ const ReviewInput = styled.textarea`
   &:focus {
     outline: none;
     border-color: #E91E63;
+  }
+
+  // ...existing code...
+  &:focus {
+    outline: none;
+    border-color: #E91E63;
+  }
+
+  &.limit-warning {
+    border-color: #ff4d4f;
   }
 `;
 
@@ -231,255 +241,272 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
+const CharacterCount = styled.div<{ count: number }>`
+  text-align: right;
+  color: ${props => props.count > 230 ? '#ff4d4f' : '#8899a6'};
+  font-size: 12px;
+  margin-top: 4px;
+`;
 interface ReviewModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose }) => {
-    const { user } = useAuthContext();
-    const [selectedType, setSelectedType] = useState<MediaType | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<Media[]>([]);
-    const [selectedMedia, setSelectedMedia] = useState<Media>();
-    const [rating, setRating] = useState(0);
-    const [review, setReview] = useState('');
-    const [isSearching, setIsSearching] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState<string | null>(null);
-    
-    const reviewService = useReviewService();
-    const mediaService = useMediaService();
+  const { user } = useAuthContext();
+  const [selectedType, setSelectedType] = useState<MediaType | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Media[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<Media>();
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const handleSubmitReview = async () => {
-        if (!selectedMedia || !rating || !review.trim() || !user?.profileId) {
-          setSubmitError('Please fill in all fields');
-          return;
-        }
-    
-        try {
-          setIsSubmitting(true);
-          setSubmitError(null);
-    
-          await reviewService.addReview(user.profileId, {
-            mediaId: selectedMedia.id,
-            content: review.trim(),
-            rating: rating
-          });
-    
-          handleClose();
-        } catch (error) {
-          console.error('Failed to submit review:', error);
-          setSubmitError('Failed to submit review. Please try again.');
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
+  const reviewService = useReviewService();
+  const mediaService = useMediaService();
 
-    const debouncedSearch = debounce(async (query: string, type: MediaType) => {
-        if (query.length < 2) {
-            setSearchResults([]);
-            return;
-        }
+  const handleSubmitReview = async () => {
+    if (!selectedMedia || !rating || !review.trim() || !user?.profileId) {
+      setSubmitError('Please fill in all fields');
+      return;
+    }
 
-        try {
-            setIsSearching(true);
-            const response = await mediaService.searchMedia(type, query);
-            setSearchResults(response.data);
-        } catch (error) {
-            console.error('Search failed:', error);
-            setSearchResults([]);
-        } finally {
-            setIsSearching(false);
-        }
-    }, 300);
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-    useEffect(() => {
-        if (selectedType && searchQuery) {
-            debouncedSearch(searchQuery, selectedType);
-        }
-        return () => {
-            debouncedSearch.cancel();
-        };
-    }, [searchQuery, selectedType]);
+      await reviewService.addReview(user.profileId, {
+        mediaId: selectedMedia.id,
+        content: review.trim(),
+        rating: rating
+      });
 
-    const handleMediaSelect = (media: Media) => {
-        setSelectedMedia(media);
-        setSearchResults([]);
-        setRating(0);
-        setReview('');
-        setSearchQuery('');
+      handleClose();
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      setSubmitError('Failed to submit review. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const debouncedSearch = debounce(async (query: string, type: MediaType) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const response = await mediaService.searchMedia(type, query);
+      setSearchResults(response.data);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, 300);
+
+  useEffect(() => {
+    if (selectedType && searchQuery) {
+      debouncedSearch(searchQuery, selectedType);
+    }
+    return () => {
+      debouncedSearch.cancel();
     };
+  }, [searchQuery, selectedType]);
 
-    const getCoverImageUrl = (media: Media): string => {
-        switch (media.type) {
-            case MediaType.GAME:
-                return `https://images.igdb.com/igdb/image/upload/t_cover_big${media.cachedImagePath}`;
-            case MediaType.BOOK:
-                return `https://books.google.com/books/content?id=${media.cachedImagePath}&printsec=frontcover&img=1&zoom=1`;
-            case MediaType.FILM:
-                return `https://image.tmdb.org/t/p/w500${media.cachedImagePath}`;
-            default:
-                return '';
-        }
-    };
+  const handleMediaSelect = (media: Media) => {
+    setSelectedMedia(media);
+    setSearchResults([]);
+    setRating(0);
+    setReview('');
+    setSearchQuery('');
+  };
 
-    const resetModal = () => {
-        setSelectedType(null);
-        setSearchQuery('');
-        setSearchResults([]);
-        setSelectedMedia(undefined);
-        setRating(0);
-        setReview('');
-        setIsSearching(false);
-    };
+  const getCoverImageUrl = (media: Media): string => {
+    switch (media.type) {
+      case MediaType.GAME:
+        return `https://images.igdb.com/igdb/image/upload/t_cover_big${media.cachedImagePath}`;
+      case MediaType.BOOK:
+        return `https://books.google.com/books/content?id=${media.cachedImagePath}&printsec=frontcover&img=1&zoom=1`;
+      case MediaType.FILM:
+        return `https://image.tmdb.org/t/p/w500${media.cachedImagePath}`;
+      default:
+        return '';
+    }
+  };
 
-    const handleClose = () => {
-        resetModal();
-        onClose();
-    };
+  const resetModal = () => {
+    setSelectedType(null);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSelectedMedia(undefined);
+    setRating(0);
+    setReview('');
+    setIsSearching(false);
+  };
 
-    const resetSearch = () => {
-        setSelectedMedia(undefined);
-        setSearchQuery('');
-        setSearchResults([]);
-    };
+  const handleClose = () => {
+    resetModal();
+    onClose();
+  };
+
+  const resetSearch = () => {
+    setSelectedMedia(undefined);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
 
 
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    return (
-        <ModalOverlay onClick={handleClose}>
-            <ModalContent onClick={e => e.stopPropagation()}>
-                <CloseButton onClick={handleClose}>×</CloseButton>
+  return (
+    <ModalOverlay onClick={handleClose}>
+      <ModalContent onClick={e => e.stopPropagation()}>
+        <CloseButton onClick={handleClose}>×</CloseButton>
 
-                <MediaTypeSelector>
-                    <TypeButton
-                        active={selectedType === MediaType.FILM}
-                        onClick={() => { resetSearch(); setSelectedType(MediaType.FILM); }}
-                    >
-                        <TypeContent>
-                            <TypeIcon viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
-                            </TypeIcon>
-                            <TypeText>Film</TypeText>
-                        </TypeContent>
-                    </TypeButton>
+        <MediaTypeSelector>
+          <TypeButton
+            active={selectedType === MediaType.FILM}
+            onClick={() => { resetSearch(); setSelectedType(MediaType.FILM); }}
+          >
+            <TypeContent>
+              <TypeIcon viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+              </TypeIcon>
+              <TypeText>Film</TypeText>
+            </TypeContent>
+          </TypeButton>
 
-                    <TypeButton
-                        active={selectedType === MediaType.BOOK}
-                        onClick={() => {
-                            resetSearch();
-                            setSelectedType(MediaType.BOOK);
-                          }}
-                    >
-                        <TypeContent>
-                            <TypeIcon viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" />
-                            </TypeIcon>
-                            <TypeText>Book</TypeText>
-                        </TypeContent>
-                    </TypeButton>
+          <TypeButton
+            active={selectedType === MediaType.BOOK}
+            onClick={() => {
+              resetSearch();
+              setSelectedType(MediaType.BOOK);
+            }}
+          >
+            <TypeContent>
+              <TypeIcon viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" />
+              </TypeIcon>
+              <TypeText>Book</TypeText>
+            </TypeContent>
+          </TypeButton>
 
-                    <TypeButton
-                        active={selectedType === MediaType.GAME}
-                        onClick={() => {
-                            resetSearch();
-                            setSelectedType(MediaType.GAME);
-                          }}
-                    >
-                        <TypeContent>
-                            <TypeIcon viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-                            </TypeIcon>
-                            <TypeText>Game</TypeText>
-                        </TypeContent>
-                    </TypeButton>
-                </MediaTypeSelector>
+          <TypeButton
+            active={selectedType === MediaType.GAME}
+            onClick={() => {
+              resetSearch();
+              setSelectedType(MediaType.GAME);
+            }}
+          >
+            <TypeContent>
+              <TypeIcon viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+              </TypeIcon>
+              <TypeText>Game</TypeText>
+            </TypeContent>
+          </TypeButton>
+        </MediaTypeSelector>
 
-                {selectedType && (
-                    <SearchInput
-                        placeholder="Search for a title..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+        {selectedType && (
+          <SearchInput
+            placeholder="Search for a title..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        )}
+
+        {searchResults.length > 0 && (
+          <SearchResults>
+            {searchResults.map((result) => (
+              <ResultItem
+                key={result.id}
+                onClick={() => handleMediaSelect(result)}
+              >
+                <div>{result.title}</div>
+                {result.publishDate && <div>{dayjs(result.publishDate).format("YYYY/MM/DD")}</div>}
+                {result.type === MediaType.FILM && result.director && <div>Director: {result.director}</div>}
+                {result.type === MediaType.BOOK && result.writer && <div>Author: {result.writer}</div>}
+                {result.type === MediaType.GAME && result.publisher && <div>Publisher: {result.publisher}</div>}
+              </ResultItem>
+            ))}
+          </SearchResults>
+        )}
+
+        {selectedMedia && (
+          <>
+            <SelectedMediaSection>
+              <CoverImage src={getCoverImageUrl(selectedMedia)} alt={selectedMedia.title} />
+              <MediaDetails>
+                <MediaTitle>{selectedMedia.title}</MediaTitle>
+                {selectedMedia.publishDate && (
+                  <MediaInfo>{dayjs(selectedMedia.publishDate).format("YYYY")}</MediaInfo>
                 )}
-
-                {searchResults.length > 0 && (
-                    <SearchResults>
-                        {searchResults.map((result) => (
-                            <ResultItem
-                                key={result.id}
-                                onClick={() => handleMediaSelect(result)}
-                            >
-                                <div>{result.title}</div>
-                                {result.publishDate && <div>{dayjs(result.publishDate).format("YYYY/MM/DD")}</div>}
-                                {result.type === MediaType.FILM && result.director && <div>Director: {result.director}</div>}
-                                {result.type === MediaType.BOOK && result.writer && <div>Author: {result.writer}</div>}
-                                {result.type === MediaType.GAME && result.publisher && <div>Publisher: {result.publisher}</div>}
-                            </ResultItem>
-                        ))}
-                    </SearchResults>
+                {selectedMedia.type === MediaType.FILM && selectedMedia.director && (
+                  <MediaInfo>Director: {selectedMedia.director}</MediaInfo>
                 )}
-
-                {selectedMedia && (
-                    <>
-                        <SelectedMediaSection>
-                            <CoverImage src={getCoverImageUrl(selectedMedia)} alt={selectedMedia.title} />
-                            <MediaDetails>
-                                <MediaTitle>{selectedMedia.title}</MediaTitle>
-                                {selectedMedia.publishDate && (
-                                    <MediaInfo>{dayjs(selectedMedia.publishDate).format("YYYY")}</MediaInfo>
-                                )}
-                                {selectedMedia.type === MediaType.FILM && selectedMedia.director && (
-                                    <MediaInfo>Director: {selectedMedia.director}</MediaInfo>
-                                )}
-                                {selectedMedia.type === MediaType.BOOK && selectedMedia.writer && (
-                                    <MediaInfo>Author: {selectedMedia.writer}</MediaInfo>
-                                )}
-                                {selectedMedia.type === MediaType.GAME && selectedMedia.publisher && (
-                                    <MediaInfo>Publisher: {selectedMedia.publisher}</MediaInfo>
-                                )}
-                            </MediaDetails>
-                        </SelectedMediaSection>
-
-                        <ReviewSection>
-                            <StarRating>
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star
-                                        key={star}
-                                        filled={star <= rating}
-                                        onClick={() => setRating(star)}
-                                    >
-                                        ★
-                                    </Star>
-                                ))}
-                            </StarRating>
-
-                            <ReviewInput
-                                placeholder="Write your review..."
-                                value={review}
-                                onChange={(e) => setReview(e.target.value)}
-                            />
-
-                            <SubmitButton 
-                                onClick={handleSubmitReview}
-                                disabled={isSubmitting || !selectedMedia || !rating || !review.trim()}
-                            >
-                                {isSubmitting ? 'Posting...' : 'Post Review'}
-                            </SubmitButton>
-
-                            {submitError && (
-                                <ErrorMessage>
-                                {submitError}
-                                </ErrorMessage>
-                            )}
-                        </ReviewSection>
-                    </>
+                {selectedMedia.type === MediaType.BOOK && selectedMedia.writer && (
+                  <MediaInfo>Author: {selectedMedia.writer}</MediaInfo>
                 )}
-            </ModalContent>
-        </ModalOverlay>
-    );
+                {selectedMedia.type === MediaType.GAME && selectedMedia.publisher && (
+                  <MediaInfo>Publisher: {selectedMedia.publisher}</MediaInfo>
+                )}
+              </MediaDetails>
+            </SelectedMediaSection>
+
+            <ReviewSection>
+              <StarRating>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    filled={star <= rating}
+                    onClick={() => setRating(star)}
+                  >
+                    ★
+                  </Star>
+                ))}
+              </StarRating>
+              <div>
+                <ReviewInput
+                  placeholder="Write your review..."
+                  value={review}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    if (text.length <= 256) {
+                      setReview(text);
+                    }
+                  }}
+                  className={review.length > 230 ? 'limit-warning' : ''}
+                  maxLength={256}
+                />
+                <CharacterCount count={review.length}>
+                  {review.length}/256 characters
+                </CharacterCount>
+              </div>
+
+              <SubmitButton
+                onClick={handleSubmitReview}
+                disabled={isSubmitting || !selectedMedia || !rating || !review.trim()}
+              >
+                {isSubmitting ? 'Posting...' : 'Post Review'}
+              </SubmitButton>
+
+              {submitError && (
+                <ErrorMessage>
+                  {submitError}
+                </ErrorMessage>
+              )}
+            </ReviewSection>
+          </>
+        )}
+      </ModalContent>
+    </ModalOverlay>
+  );
 };
 
 export default ReviewModal;
