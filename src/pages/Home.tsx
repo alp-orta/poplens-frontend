@@ -1,9 +1,12 @@
-import { useState } from 'react';
 import styled from 'styled-components';
 import ReviewCard from '../components/ReviewCard';
 import { MediaType } from '../models/MediaType';
 import useAuthService from '../hooks/useAuthService';
 import { useAuthContext } from '../managers/AuthContext';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import useFeedService from '../hooks/useFeedService';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { ReviewDetail } from '../models/profile/ReviewDetail';
 
 const FeedToggle = styled.div`
   display: flex;
@@ -37,28 +40,70 @@ const Feed = styled.div`
   padding: 20px;
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+`;
 const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   const { user } = useAuthContext();
-  const mockReviews = [
-    {
-      user: {
-        name: "John Doe",
-        username: "johndoe",
-        avatar: "https://via.placeholder.com/48"
-      },
-      media: {
-        title: "Inception",
-        type: MediaType.FILM
-      },
-      rating: 4.5,
-      content: "This movie blew my mind!",
-      timestamp: "2h ago",
-      likes: 42,
-      comments: 12
-    },
-    // Add more mock reviews as needed
-  ];
+  const feedService = useFeedService();
+  
+  const [reviews, setReviews] = useState<ReviewDetail[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef<IntersectionObserver>();
+  
+  const lastReviewElementRef = useCallback((node: HTMLDivElement) => {
+    if (loading) return;
+    
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
+
+  const fetchReviews = async () => {
+    if (!user?.profileId || loading || !hasMore) return;
+    
+    try {
+      setLoading(true);
+      const response = await feedService.getFollowerFeed(user.profileId, page);
+      
+      const newReviews = response.data.result;
+      setReviews(prev => [...prev, ...newReviews]);
+      
+      // Calculate if there are more pages
+      const totalPages = Math.ceil(response.data.totalCount / response.data.pageSize);
+      setHasMore(page < totalPages);
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'following') {
+      setReviews([]);
+      setPage(1);
+      setHasMore(true);
+      fetchReviews();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'following') {
+      fetchReviews();
+    }
+  }, [page]);
 
   return (
     <>
@@ -77,9 +122,41 @@ const Home: React.FC = () => {
         </TabButton>
       </FeedToggle>
       <Feed>
-        {/* {mockReviews.map((review, index) => (
-          <ReviewCard key={index} {...review} />
-        ))} */}
+        {activeTab === 'following' && (
+          <>
+            {reviews.map((review, index) => (
+              <div 
+                ref={index === reviews.length - 1 ? lastReviewElementRef : undefined}
+                key={review.id}
+              >
+                <ReviewCard
+                  key={review.id}
+                  user={{
+                    name: review.username || '', // TODO : FIX THIS
+                    username: review.username || '', // TODO : FIX THIS
+                    avatar: "https://secure.gravatar.com/avatar/?s=134&d=identicon"
+                  }}
+                  media={{
+                    title: review.mediaTitle,
+                    type: review.mediaType as MediaType,
+                    cachedImagePath: review.mediaCachedImagePath,
+                    creator: review.mediaCreator,
+                  }}
+                  rating={review.rating}
+                  content={review.content}
+                  timestamp={new Date(review.createdDate).toLocaleDateString()}
+                  likes={0} // TODO: Add likes to review model
+                  comments={0} // TODO: Add comments to review model
+                />
+              </div>
+            ))}
+            {loading && (
+              <LoadingContainer>
+                <LoadingSpinner />
+              </LoadingContainer>
+            )}
+          </>
+        )}
       </Feed>
     </>
   );

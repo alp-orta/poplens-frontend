@@ -250,7 +250,8 @@ const Layout: React.FC = () => {
   const { user, logout } = useAuthContext();
   const location = useLocation();
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const isLoginPage = location.pathname === '/login';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
 
   const handleLogout = () => {
     logout();
@@ -318,13 +319,13 @@ const Layout: React.FC = () => {
         </LogButton>
       </Sidebar>
       <MainContent>
-        {!user && !isLoginPage && (
+        {!user && !isAuthPage && (
           <MainLoginPrompt>
             <h2>Sign in to use all features</h2>
             <LoginLink to="/login">Sign In</LoginLink>
           </MainLoginPrompt>
         )}
-        {(user || (!user && isLoginPage)) && <Outlet />}
+        {(user || (!user && isAuthPage)) && <Outlet />}
       </MainContent>
       <RightSidebar>
         {!user && (

@@ -1,13 +1,21 @@
 import { makeRequest } from "../managers/apiClient";
-import { LoginInfo } from "../models/auth/LoginInfo";
-import { RegisterInfo } from "../models/auth/RegisterInfo";
 import { Profile } from "../models/profile/Profile";
 
-const useAuthService = () => {
+const 
+useAuthService = () => {
   const getProfile = async (profileId: string): Promise<{data: Profile}> => {
-    return makeRequest("Profile", profileId, "GET");
+    return makeRequest("Profile", `GetProfile/${profileId}`, "GET");
   };
-  return { getProfile };
+
+  const followUser = async (followerId: string, followingId: string): Promise<{data: any}> => {
+    return makeRequest("Profile", `${followerId}/follow/${followingId}`, "POST");
+  };
+
+  const unfollowUser = async (followerId: string, followingId: string): Promise<{data: any}> => {
+    return makeRequest("Profile", `${followerId}/unfollow/${followingId}`, "DELETE");
+  };
+  
+  return { getProfile, followUser, unfollowUser };
 };
 
 export default useAuthService;

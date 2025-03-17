@@ -15,7 +15,11 @@ const useAuthService = () => {
     return JSON.parse(sessionStorage.getItem("jwt") || "{}").token;
   };
 
-  return { login, register, getToken };
+  const fetchIdsFromUsername = async (username: string): Promise<any> => {
+    return makeRequest("UserAuthentication", `FetchIdsFromUsername/${username}`, "GET");
+  }
+
+  return { login, register, getToken, fetchIdsFromUsername };
 };
 
 export default useAuthService;

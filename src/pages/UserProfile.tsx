@@ -8,6 +8,7 @@ import { useAuthContext } from '../managers/AuthContext';
 import { Profile } from '../models/profile/Profile';
 import useProfileService from '../hooks/useProfileService';
 import LoadingSpinner from '../components/LoadingSpinner';
+import useAuthService from '../hooks/useAuthService';
 
 
 const ProfileContainer = styled.div`
@@ -76,18 +77,20 @@ const StatItem = styled.div`
   }
 `;
 
-const FollowButton = styled.button`
+const FollowButton = styled.button<{ isLoading?: boolean }>`
   float: right;
   padding: 8px 16px;
   border-radius: 20px;
-  background-color: #E91E63;
+  background-color: ${props => props.isLoading ? '#7d1038' : '#E91E63'};
   color: white;
   border: none;
   font-weight: bold;
-  cursor: pointer;
+  cursor: ${props => props.isLoading ? 'not-allowed' : 'pointer'};
+  opacity: ${props => props.isLoading ? 0.7 : 1};
+  transition: all 0.2s ease;
   
   &:hover {
-    background-color: #C2185B;
+    background-color: ${props => props.isLoading ? '#7d1038' : '#C2185B'};
   }
 `;
 
@@ -127,22 +130,48 @@ const ReviewsContainer = styled.div`
 const UserProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const { user } = useAuthContext();
-  const [profileData, setProfileData] = useState<Profile | null>(null);
+  const [profileData, setProfileData] = useState<Profile>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'reviews' | 'likes'>('reviews');
   const [isFollowing, setIsFollowing] = useState(false);
   const profileService = useProfileService();
+  const userAuthService = useAuthService();
+  const [profileId, setProfileId] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
-        const response = await profileService.getProfile(user?.profileId || '');
+        // First get the profileId for the username in the URL
+        let currentProfileId = "";
+        let currentUserId = "";
+        if (user && username === user.username) {
+          // If the user is viewing their own profile, use the profileId from the user object
+          currentProfileId = user.profileId;
+          currentUserId = user.userId;
+        } else {
+          // If the user is viewing someone else's profile, fetch the profileId from the username
+          const profileResponse = await userAuthService.fetchIdsFromUsername(username || '');
+          currentProfileId = profileResponse.data.profileId;
+          currentUserId = profileResponse.data.userId;
+        }
+        setProfileId(currentProfileId);
+        setUserId(currentUserId);
+
+        // Then fetch the full profile data using that profileId
+        const response = await profileService.getProfile(currentProfileId);
         setProfileData(response.data);
-        setIsFollowing(response.data.followers.some(
-          f => f.followerId === user?.profileId
-        ));
+
+        // Check if the logged-in user is following this profile
+        if (user && user.profileId) {
+          setIsFollowing(response.data.followers.some(
+            f => f.followerId === user.profileId
+          ));
+        }
       } catch (err) {
         setError('Failed to load profile');
         console.error(err);
@@ -151,10 +180,42 @@ const UserProfile: React.FC = () => {
       }
     };
 
-    if (user?.profileId) {
+    if (username) {
       fetchProfile();
     }
-  }, [user?.profileId]);
+  }, [username, user?.profileId]);
+
+  const handleFollowClick = async () => {
+    if (!user?.profileId || !profileId) return;
+
+    try {
+      setIsFollowLoading(true);
+      if (isFollowing) {
+        await profileService.unfollowUser(user.profileId, profileId);
+      } else {
+        await profileService.followUser(user.profileId, profileId);
+      }
+      setIsFollowing(!isFollowing);
+
+      // Update follower count in profileData
+      if (profileData) {
+        setProfileData((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            followers: isFollowing
+              ? prev.followers.filter((f: any) => f.followerId !== user.profileId)
+              : [...prev.followers, { followerId: user.profileId }]
+          };
+        });
+      }
+    } catch (error) {
+      console.error('Failed to follow user:', error);
+      // Optionally add error handling UI here
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
 
   if (isLoading) return <LoadingSpinner />;
   if (error) return <div>{error}</div>;
@@ -168,9 +229,10 @@ const UserProfile: React.FC = () => {
           <Avatar src="https://secure.gravatar.com/avatar/?s=134&d=identicon" alt="Profile" />
         </CoverImage>
         <ProfileInfo>
-          {profileData.userId !== user?.userId  && <FollowButton 
-            onClick={() => setIsFollowing(!isFollowing)}
-          >
+          {profileData.userId !== user?.userId && <FollowButton
+            onClick={handleFollowClick}
+            isLoading={isFollowLoading}
+            disabled={isFollowLoading}>
             {isFollowing ? 'Following' : 'Follow'}
           </FollowButton>}
           <UserName>{username}</UserName>
@@ -190,8 +252,8 @@ const UserProfile: React.FC = () => {
       </ProfileHeader>
 
       <TabsContainer>
-        <Tab 
-          active={activeTab === 'reviews'} 
+        <Tab
+          active={activeTab === 'reviews'}
           onClick={() => setActiveTab('reviews')}
         >
           Reviews
