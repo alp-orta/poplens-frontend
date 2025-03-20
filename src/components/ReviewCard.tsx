@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { MediaType } from '../models/MediaType';
-import Media from '../models/Media/Media';
+import { Link } from 'react-router-dom';
 
 const Card = styled.div`
   border-bottom: 1px solid #38444d;
@@ -113,6 +113,25 @@ const ReviewContent = styled.p`
   max-width: 100%;           // Add this
   white-space: pre-wrap;     // Add this
 `;
+
+const DisplayLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const UsernameLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+`;
+
+const AvatarLink = styled(Link)`
+  display: block;
+`;
+
 interface MediaInfoProps {
   type: MediaType;
   title: string;
@@ -171,11 +190,22 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   return (
     <Card>
       <UserInfo>
-        <Avatar src={user.avatar} alt={user.name} />
+        <AvatarLink to={`/profile/${user.username}`}>
+          <Avatar src={user.avatar} alt={user.name} />
+        </AvatarLink>
         <UserDetails>
-          <DisplayName>{user.name}</DisplayName>
-          <Username>@{user.username}</Username>
+          <DisplayLink to={`/profile/${user.username}`}>
+            <DisplayName>
+              {user.name}
+            </DisplayName>
+          </DisplayLink>
+          <UsernameLink to={`/profile/${user.username}`}>
+            <Username>
+              @{user.username}
+            </Username>
+          </UsernameLink>
         </UserDetails>
+        {/* <Date>{timestamp}</Date> */}
       </UserInfo>
 
       <MediaSection>

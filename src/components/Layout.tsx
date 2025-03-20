@@ -252,6 +252,15 @@ const Layout: React.FC = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
+  // Add this function to handle new reviews
+  const onReviewPosted = (newReview: any) => {
+    // If the current profile matches the logged-in user
+    if (window.location.pathname.includes(`/profile/${user?.username}`)) {
+      // We need to update the profile data
+      // This is a simple approach - for more complex needs, use state management
+      window.dispatchEvent(new CustomEvent('review-posted', { detail: newReview }));
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -346,6 +355,7 @@ const Layout: React.FC = () => {
       <ReviewModal
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
+        onReviewPosted={onReviewPosted}
       />
     </LayoutContainer>
   );

@@ -217,6 +217,32 @@ const UserProfile: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    // Event listener for new reviews
+    const handleNewReview = (event: CustomEvent) => {
+      const newReview = event.detail;
+      
+      if (profileData && user?.username === username) {
+        setProfileData((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            detailedReviews: [newReview, ...prev.detailedReviews],
+            reviews: [{ id: newReview.id }, ...prev.reviews]
+          };
+        });
+      }
+    };
+  
+    // Add event listener
+    window.addEventListener('review-posted', handleNewReview as EventListener);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('review-posted', handleNewReview as EventListener);
+    };
+  }, [profileData, username, user?.username]);
+
   if (isLoading) return <LoadingSpinner />;
   if (error) return <div>{error}</div>;
   if (!profileData) return <div>No profile data found</div>;

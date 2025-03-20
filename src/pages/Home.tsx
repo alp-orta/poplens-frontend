@@ -45,47 +45,58 @@ const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
   padding: 20px;
+  margin-top: 10px;
+  border-top: 1px solid #38444d;
 `;
 const Home: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   const { user } = useAuthContext();
   const feedService = useFeedService();
-  
+
   const [reviews, setReviews] = useState<ReviewProfileDetail[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const observer = useRef<IntersectionObserver>();
-  
+
   const lastReviewElementRef = useCallback((node: HTMLDivElement) => {
-    if (loading) return;
-    
+    if (loading || !hasMore) return; // Don't observe when loading or no more data
+
     if (observer.current) observer.current.disconnect();
-    
+
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
+      if (entries[0].isIntersecting && hasMore && !loading) {
+        // Only trigger next page load if we're not already loading
         setPage(prevPage => prevPage + 1);
       }
     });
-    
+
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
   const fetchReviews = async () => {
     if (!user?.profileId || loading || !hasMore) return;
-    
+  
     try {
       setLoading(true);
       const response = await feedService.getFollowerFeed(user.profileId, page);
-      
+  
       const newReviews = response.data.result;
+      
+      // If we received empty results, stop pagination
+      if (newReviews.length === 0) {
+        setHasMore(false);
+        return;
+      }
+      
       setReviews(prev => [...prev, ...newReviews]);
       
-      // Calculate if there are more pages
-      const totalPages = Math.ceil(response.data.totalCount / response.data.pageSize);
-      setHasMore(page < totalPages);
+      // Simply assume there are more pages if we got results
+      setHasMore(true);
+      
     } catch (error) {
       console.error('Failed to fetch reviews:', error);
+      setHasMore(false); // Stop on error
     } finally {
       setLoading(false);
     }
@@ -101,7 +112,7 @@ const Home: React.FC = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'following') {
+    if (activeTab === 'following' && !loading) {
       fetchReviews();
     }
   }, [page]);
@@ -109,14 +120,14 @@ const Home: React.FC = () => {
   return (
     <>
       <FeedToggle>
-        <TabButton 
-          active={activeTab === 'for-you'} 
+        <TabButton
+          active={activeTab === 'for-you'}
           onClick={() => setActiveTab('for-you')}
         >
           For You
         </TabButton>
-        <TabButton 
-          active={activeTab === 'following'} 
+        <TabButton
+          active={activeTab === 'following'}
           onClick={() => setActiveTab('following')}
         >
           Following
@@ -126,7 +137,7 @@ const Home: React.FC = () => {
         {activeTab === 'following' && (
           <>
             {reviews.map((review, index) => (
-              <div 
+              <div
                 ref={index === reviews.length - 1 ? lastReviewElementRef : undefined}
                 key={review.id}
               >

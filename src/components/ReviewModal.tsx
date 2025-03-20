@@ -250,9 +250,10 @@ const CharacterCount = styled.div<{ count: number }>`
 interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onReviewPosted?: (review: any) => void;
 }
 
-const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose }) => {
+const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, onReviewPosted }) => {
   const { user } = useAuthContext();
   const [selectedType, setSelectedType] = useState<MediaType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -272,17 +273,35 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose }) => {
       setSubmitError('Please fill in all fields');
       return;
     }
-
+  
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-
-      await reviewService.addReview(user.profileId, {
+  
+      // Post the review to the backend
+      const response = await reviewService.addReview(user.profileId, {
         mediaId: selectedMedia.id,
         content: review.trim(),
         rating: rating
       });
-
+  
+      // Create a new review object that matches the structure expected by ReviewCard
+      const newReview = {
+        id: response.data.id || `temp-${Date.now()}`, // Use response ID or generate temporary one
+        mediaTitle: selectedMedia.title,
+        mediaType: selectedMedia.type,
+        mediaCachedImagePath: selectedMedia.cachedImagePath,
+        mediaCreator: selectedMedia.director || selectedMedia.writer || selectedMedia.publisher || '',
+        rating,
+        content: review.trim(),
+        createdDate: new Date().toISOString(),
+      };
+  
+      // Notify parent components about the new review
+      if (onReviewPosted) {
+        onReviewPosted(newReview);
+      }
+  
       handleClose();
     } catch (error) {
       console.error('Failed to submit review:', error);
