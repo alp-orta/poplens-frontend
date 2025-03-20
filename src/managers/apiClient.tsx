@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: "https://localhost:7137/api", // WebUI Gateway base URL
+  baseURL: "http://localhost:5002/api", // WebUI Gateway base URL
 });
 
 apiClient.interceptors.request.use((config) => {

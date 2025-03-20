@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import useFeedService from '../hooks/useFeedService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { ReviewDetail } from '../models/profile/ReviewDetail';
+import { ReviewProfileDetail } from '../models/Feed/ReviewProfileDetail';
 
 const FeedToggle = styled.div`
   display: flex;
@@ -50,7 +51,7 @@ const Home: React.FC = () => {
   const { user } = useAuthContext();
   const feedService = useFeedService();
   
-  const [reviews, setReviews] = useState<ReviewDetail[]>([]);
+  const [reviews, setReviews] = useState<ReviewProfileDetail[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
