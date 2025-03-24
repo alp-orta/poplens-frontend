@@ -6,6 +6,9 @@ import Login from "../pages/Login";
 import NotFound from "../pages/NotFound";
 import Register from "../pages/Register";
 import Layout from '../components/Layout';
+import BooksPage from "../pages/Books";
+import FilmsPage from "../pages/Films";
+import GamesPage from "../pages/Games";
 
 const routes = createBrowserRouter([
   {
@@ -17,6 +20,9 @@ const routes = createBrowserRouter([
       { path: "register", element: <Register /> },                // Remove leading slash
       { path: "home", element: <Home /> },                        // Remove leading slash
       { path: "profile/:username", element: <UserProfile /> },    // Remove leading slash
+      { path: "films", element: <FilmsPage /> },
+      { path: "books", element: <BooksPage /> },
+      { path: "games", element: <GamesPage /> },
       { path: "*", element: <NotFound /> },
     ],
   },
