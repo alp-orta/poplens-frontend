@@ -143,9 +143,12 @@ const Home: React.FC = () => {
               >
                 <ReviewCard
                   key={review.id}
+                  id={review.id}
+                  mediaId={review.mediaId}
+                  profileId={review.profileId}
                   user={{
-                    name: review.username || '', // TODO : FIX THIS
-                    username: review.username || '', // TODO : FIX THIS
+                    name: review.username || '',
+                    username: review.username || '',
                     avatar: "https://secure.gravatar.com/avatar/?s=134&d=identicon"
                   }}
                   media={{
@@ -157,9 +160,9 @@ const Home: React.FC = () => {
                   rating={review.rating}
                   content={review.content}
                   timestamp={new Date(review.createdDate).toLocaleDateString()}
-                  likes={0} // TODO: Add likes to review model
-                  comments={0} // TODO: Add comments to review model
-                />
+                  likes={0}
+                  comments={0}
+                 />
               </div>
             ))}
             {loading && (

@@ -1,6 +1,9 @@
 import styled from 'styled-components';
 import { MediaType } from '../models/MediaType';
 import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import useReviewService from '../hooks/useReviewService';
+import { useAuthContext } from '../managers/AuthContext';
 
 const Card = styled.div`
   border-bottom: 1px solid #38444d;
@@ -132,6 +135,81 @@ const AvatarLink = styled(Link)`
   display: block;
 `;
 
+const CardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+`;
+
+const MenuItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(233, 30, 99, 0.1);
+    color: #E91E63;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+// Update the ThreeDotButton to have less bottom padding
+const ThreeDotButton = styled.button`
+  background: none;
+  border: none;
+  color: #8899a6;
+  cursor: pointer;
+  padding: 8px 8px 8px 8px; // Reduced bottom padding
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  ${Card}:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    background-color: rgba(233, 30, 99, 0.1);
+    color: #E91E63;
+  }
+`;
+const DropdownContainer = styled.div`
+  position: relative;
+  
+  &:hover > div {
+    display: block;
+  }
+`;
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: 60%; // Changed from 100% to bring it closer
+  right: 0;
+  background-color: #192734;
+  border-radius: 8px;
+  border: 1px solid #38444d;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  min-width: 150px;
+  display: none;
+  margin-top: -5px; // Added negative margin to move it up
+`;
+
 interface MediaInfoProps {
   type: MediaType;
   title: string;
@@ -139,6 +217,9 @@ interface MediaInfoProps {
   cachedImagePath: string;
 }
 interface ReviewCardProps {
+  id: string;
+  mediaId: string;
+  profileId: string; // Add this for permission checking
   user: {
     name: string;
     username: string;
@@ -150,17 +231,58 @@ interface ReviewCardProps {
   timestamp: string;
   likes: number;
   comments: number;
+  onDelete?: () => void; // Add callback for when review is deleted
 }
 
 const ReviewCard: React.FC<ReviewCardProps> = ({
+  id,
+  mediaId,
+  profileId,
   user,
   media,
   rating,
   content,
   timestamp,
   likes,
-  comments
+  comments,
+  onDelete
 }) => {
+  const { user: currentUser } = useAuthContext();
+  const reviewService = useReviewService();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const isOwnReview = currentUser?.profileId === profileId;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleDeleteReview = async () => {
+    if (!currentUser?.profileId) return;
+
+    try {
+      await reviewService.deleteReview(currentUser.profileId, mediaId);
+      if (onDelete) {
+        onDelete();
+      }
+    } catch (error) {
+      console.error('Failed to delete review:', error);
+      // Optionally add error handling UI
+    } finally {
+      setShowDropdown(false);
+    }
+  };
+
   const getCoverImageUrl = (media: MediaInfoProps): string => {
     switch (media.type) {
       case MediaType.GAME:
@@ -189,24 +311,44 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
 
   return (
     <Card>
-      <UserInfo>
-        <AvatarLink to={`/profile/${user.username}`}>
-          <Avatar src={user.avatar} alt={user.name} />
-        </AvatarLink>
-        <UserDetails>
-          <DisplayLink to={`/profile/${user.username}`}>
-            <DisplayName>
-              {user.name}
-            </DisplayName>
-          </DisplayLink>
-          <UsernameLink to={`/profile/${user.username}`}>
-            <Username>
-              @{user.username}
-            </Username>
-          </UsernameLink>
-        </UserDetails>
-        {/* <Date>{timestamp}</Date> */}
-      </UserInfo>
+      <CardHeader>
+        <UserInfo>
+          <AvatarLink to={`/profile/${user.username}`}>
+            <Avatar src={user.avatar} alt={user.name} />
+          </AvatarLink>
+          <UserDetails>
+            <DisplayLink to={`/profile/${user.username}`}>
+              <DisplayName>
+                {user.name}
+              </DisplayName>
+            </DisplayLink>
+            <UsernameLink to={`/profile/${user.username}`}>
+              <Username>
+                @{user.username}
+              </Username>
+            </UsernameLink>
+          </UserDetails>
+        </UserInfo>
+        
+        {isOwnReview && (
+          <DropdownContainer>
+            <ThreeDotButton>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+              </svg>
+            </ThreeDotButton>
+            
+            <DropdownMenu>
+              <MenuItem onClick={handleDeleteReview}>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                </svg>
+                Delete
+              </MenuItem>
+            </DropdownMenu>
+          </DropdownContainer>
+        )}
+      </CardHeader>
 
       <MediaSection>
         <MediaCover src={getCoverImageUrl(media)} alt={media.title} />

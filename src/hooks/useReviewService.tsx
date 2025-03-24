@@ -20,7 +20,18 @@ const useReviewService = () => {
     );
   };
 
-  return { addReview };
+  const deleteReview = async (
+    profileId: string,
+    mediaId: string
+  ): Promise<{ data: any }> => {
+    return makeRequest(
+      "Review",
+      `${profileId}/DeleteReview/${mediaId}`,
+      "DELETE"
+    );
+  };
+
+  return { addReview, deleteReview };
 };
 
 export default useReviewService;

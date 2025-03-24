@@ -12,15 +12,15 @@ const routes = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-      { path: "/", element: <Navigate to="/login" replace /> },
-      { path: "/login", element: <Login /> },
-      { path: "/register", element: <Register /> },
-      { path: "/home", element: <Home /> },
-      { path: "/profile/:username", element: <UserProfile /> },
+      { index: true, element: <Navigate to="/login" replace /> }, // Use index route
+      { path: "login", element: <Login /> },                      // Remove leading slash
+      { path: "register", element: <Register /> },                // Remove leading slash
+      { path: "home", element: <Home /> },                        // Remove leading slash
+      { path: "profile/:username", element: <UserProfile /> },    // Remove leading slash
       { path: "*", element: <NotFound /> },
     ],
   },
-]);
+]); 
 
 const AppRouter: React.FC = () => {
   return <RouterProvider router={routes} />;

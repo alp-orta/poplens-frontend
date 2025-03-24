@@ -9,6 +9,7 @@ import { Profile } from '../models/profile/Profile';
 import useProfileService from '../hooks/useProfileService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import useAuthService from '../hooks/useAuthService';
+import useReviewService from '../hooks/useReviewService';
 
 
 const ProfileContainer = styled.div`
@@ -140,7 +141,22 @@ const UserProfile: React.FC = () => {
   const [profileId, setProfileId] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const reviewService = useReviewService();
 
+
+  const handleDeleteReview = (reviewId: string) => {
+    if (!profileData) return;
+    
+    // Update the UI immediately (optimistic update)
+    setProfileData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        detailedReviews: prev.detailedReviews.filter(r => r.id !== reviewId),
+        reviews: prev.reviews.filter(r => r.id !== reviewId)
+      };
+    });
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -291,6 +307,9 @@ const UserProfile: React.FC = () => {
           {profileData.detailedReviews.map(review => (
             <ReviewCard
               key={review.id}
+              id={review.id}
+              mediaId={review.mediaId}
+              profileId={profileId}
               user={{
                 name: username || '',
                 username: username || '',
@@ -305,8 +324,9 @@ const UserProfile: React.FC = () => {
               rating={review.rating}
               content={review.content}
               timestamp={new Date(review.createdDate).toLocaleDateString()}
-              likes={0} // TODO: Add likes to review model
-              comments={0} // TODO: Add comments to review model
+              likes={0}
+              comments={0}
+              onDelete={() => handleDeleteReview(review.id)}
             />
           ))}
         </ReviewsContainer>
