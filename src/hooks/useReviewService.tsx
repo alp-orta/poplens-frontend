@@ -1,5 +1,6 @@
 import { makeRequest } from "../managers/apiClient";
 import { CreateReviewRequest } from "../models/Review/CreateReviewRequest";
+import { MediaMainPageReviewInfo } from "../models/Review/MediaMainPageReviewInfo";
 
 const useReviewService = () => {
   const addReview = async (
@@ -25,7 +26,17 @@ const useReviewService = () => {
     );
   };
 
-  return { addReview, deleteReview };
+  const getMediaMainPageReviewInfo = async (
+    mediaId: string
+  ): Promise<{ data: MediaMainPageReviewInfo }> => {
+    return makeRequest(
+      "Review",
+      `GetMediaMainPageReviewInfo/${mediaId}`,
+      "GET"
+    );
+  };
+
+  return { addReview, deleteReview, getMediaMainPageReviewInfo };
 };
 
 export default useReviewService;

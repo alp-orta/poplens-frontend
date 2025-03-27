@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import useMediaService from '../hooks/useMediaService';
 import { Media } from '../models/Media/Media';
 import { MediaType } from '../models/MediaType';
@@ -73,12 +73,12 @@ const MediaGrid = styled.div`
   gap: 20px;
 `;
 
-const MediaCard = styled(Link)`
+const MediaCardContainer = styled.div`
   background-color: #192734;
   border-radius: 8px;
   overflow: hidden;
   transition: transform 0.2s;
-  text-decoration: none;
+  cursor: pointer;
 
   &:hover {
     transform: scale(1.03);
@@ -148,6 +148,7 @@ const Medias: React.FC<MediaPageProps> = ({ mediaType, title, genreOptions }) =>
   const genres = genreOptions;
   // Add ref for intersection observer
   const observer = useRef<IntersectionObserver>();
+  const navigate = useNavigate();
 
   const mediaService = useMediaService();
 
@@ -332,32 +333,39 @@ const Medias: React.FC<MediaPageProps> = ({ mediaType, title, genreOptions }) =>
 
       {sortedMedia.length > 0 ? (
         <MediaGrid>
-          {sortedMedia.map((item, index) => (
-            <div
-              key={item.id}
-              ref={index === sortedMedia.length - 1 ? lastMediaElementRef : undefined}
-            >
-              <MediaCard
-                to={`/${getMediaPath(item.type)}/${item.title.replace(/ /g, '-').toLowerCase()}`}
+          {sortedMedia.map((item, index) => {
+            const mediaPath = `/${getMediaPath(item.type)}/${item.title.replace(/ /g, '-').toLowerCase()}`;
+
+            return (
+              <div
+                key={item.id}
+                ref={index === sortedMedia.length - 1 ? lastMediaElementRef : undefined}
               >
-                <MediaCover
-                  src={getCoverImageUrl(item)}
-                  alt={item.title}
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/150x225?text=No+Image';
+                <MediaCardContainer
+                  onClick={() => {
+                    // Navigate programmatically with state
+                    navigate(mediaPath, { state: { media: item } });
                   }}
-                />
-                <MediaInfo>
-                  <MediaTitle title={item.title}>{item.title}</MediaTitle>
-                  <Year>{item.publishDate ? dayjs(item.publishDate).format('YYYY') : 'Unknown'}</Year>
-                  <MediaStats>
-                    <span>⭐ {item.avgRating ? item.avgRating.toFixed(1) : 'N/A'}</span>
-                    <span>💬 {item.totalReviews}</span>
-                  </MediaStats>
-                </MediaInfo>
-              </MediaCard>
-            </div>
-          ))}
+                >
+                  <MediaCover
+                    src={getCoverImageUrl(item)}
+                    alt={item.title}
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/150x225?text=No+Image';
+                    }}
+                  />
+                  <MediaInfo>
+                    <MediaTitle title={item.title}>{item.title}</MediaTitle>
+                    <Year>{item.publishDate ? dayjs(item.publishDate).format('YYYY') : 'Unknown'}</Year>
+                    <MediaStats>
+                      <span>⭐ {item.avgRating ? item.avgRating.toFixed(1) : 'N/A'}</span>
+                      <span>💬 {item.totalReviews}</span>
+                    </MediaStats>
+                  </MediaInfo>
+                </MediaCardContainer>
+              </div>
+            );
+          })}
         </MediaGrid>
       ) : searchQuery.length >= 2 ? (
         <NoResults>No results found. Try a different search term.</NoResults>

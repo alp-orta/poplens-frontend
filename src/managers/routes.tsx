@@ -9,6 +9,7 @@ import Layout from '../components/Layout';
 import BooksPage from "../pages/Books";
 import FilmsPage from "../pages/Films";
 import GamesPage from "../pages/Games";
+import MediaDetailsPage from "../pages/MediaDetails";
 
 const routes = createBrowserRouter([
   {
@@ -24,6 +25,9 @@ const routes = createBrowserRouter([
       { path: "books", element: <BooksPage /> },
       { path: "games", element: <GamesPage /> },
       { path: "*", element: <NotFound /> },
+      { path: "films/:mediaName", element: <MediaDetailsPage /> },
+      { path: "books/:mediaName", element: <MediaDetailsPage /> },
+      { path: "games/:mediaName", element: <MediaDetailsPage /> },
     ],
   },
 ]); 
