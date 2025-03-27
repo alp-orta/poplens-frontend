@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import useMediaService from '../hooks/useMediaService';
@@ -146,8 +146,27 @@ const Medias: React.FC<MediaPageProps> = ({ mediaType, title, genreOptions }) =>
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const genres = genreOptions;
+  // Add ref for intersection observer
+  const observer = useRef<IntersectionObserver>();
 
   const mediaService = useMediaService();
+
+  // Create a reference callback for the last element
+  const lastMediaElementRef = useCallback((node: HTMLDivElement) => {
+    if (isLoading) return;
+
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && !isLoading) {
+        // Load the next page when user scrolls to bottom
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+
+    if (node) observer.current.observe(node);
+  }, [isLoading, hasMore]);
+
 
   const fetchMedia = async () => {
     try {
@@ -311,39 +330,49 @@ const Medias: React.FC<MediaPageProps> = ({ mediaType, title, genreOptions }) =>
         </FilterGroup>
       </FilterSection>
 
-      {isLoading ? (
-        <LoadingContainer>Loading...</LoadingContainer>
-      ) : sortedMedia.length > 0 ? (
+      {sortedMedia.length > 0 ? (
         <MediaGrid>
-          {sortedMedia.map(item => (
-            <MediaCard
+          {sortedMedia.map((item, index) => (
+            <div
               key={item.id}
-              to={`/${getMediaPath(item.type)}/${item.id}`}
+              ref={index === sortedMedia.length - 1 ? lastMediaElementRef : undefined}
             >
-              <MediaCover
-                src={getCoverImageUrl(item)}
-                alt={item.title}
-                onError={(e) => {
-                  e.currentTarget.src = 'https://via.placeholder.com/150x225?text=No+Image';
-                }}
-              />
-              <MediaInfo>
-                <MediaTitle title={item.title}>{item.title}</MediaTitle>
-                <Year>{item.publishDate ? dayjs(item.publishDate).format('YYYY') : 'Unknown'}</Year>
-                <MediaStats>
-                  <span>⭐ {item.avgRating ? item.avgRating.toFixed(1) : 'N/A'}</span>
-                  <span>💬 {item.totalReviews}</span>
-                </MediaStats>
-              </MediaInfo>
-            </MediaCard>
+              <MediaCard
+                to={`/${getMediaPath(item.type)}/${item.title.replace(/ /g, '-').toLowerCase()}`}
+              >
+                <MediaCover
+                  src={getCoverImageUrl(item)}
+                  alt={item.title}
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://via.placeholder.com/150x225?text=No+Image';
+                  }}
+                />
+                <MediaInfo>
+                  <MediaTitle title={item.title}>{item.title}</MediaTitle>
+                  <Year>{item.publishDate ? dayjs(item.publishDate).format('YYYY') : 'Unknown'}</Year>
+                  <MediaStats>
+                    <span>⭐ {item.avgRating ? item.avgRating.toFixed(1) : 'N/A'}</span>
+                    <span>💬 {item.totalReviews}</span>
+                  </MediaStats>
+                </MediaInfo>
+              </MediaCard>
+            </div>
           ))}
         </MediaGrid>
       ) : searchQuery.length >= 2 ? (
         <NoResults>No results found. Try a different search term.</NoResults>
       ) : (
         <NoResults>Enter at least 2 characters to search.</NoResults>
-      )}
-    </PageContainer>
+      )
+      }
+
+      {/* Add loading indicator at bottom during pagination */}
+      {
+        isLoading && page > 1 && (
+          <LoadingContainer>Loading more...</LoadingContainer>
+        )
+      }
+    </PageContainer >
   );
 };
 
