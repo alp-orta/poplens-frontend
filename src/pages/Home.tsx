@@ -6,7 +6,7 @@ import { useAuthContext } from '../managers/AuthContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import useFeedService from '../hooks/useFeedService';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { ReviewDetail } from '../models/profile/ReviewDetail';
+import { ReviewDetail } from '../models/Review/ReviewDetail';
 import { ReviewProfileDetail } from '../models/Feed/ReviewProfileDetail';
 
 const FeedToggle = styled.div`

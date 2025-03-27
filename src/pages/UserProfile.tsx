@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import ReviewCard from '../components/ReviewCard';
 import { MediaType } from '../models/MediaType';
 import { useParams } from 'react-router-dom';
-import { Review } from '../models/profile/Review';
+import { Review } from '../models/Review/Review';
 import { useAuthContext } from '../managers/AuthContext';
 import { Profile } from '../models/profile/Profile';
 import useProfileService from '../hooks/useProfileService';

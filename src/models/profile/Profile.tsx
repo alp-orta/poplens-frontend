@@ -1,6 +1,6 @@
 import { Follow } from "./Follow";
-import { Review } from "./Review";
-import { ReviewDetail } from "./ReviewDetail";
+import { Review } from "../Review/Review";
+import { ReviewDetail } from "../Review/ReviewDetail";
 
 export interface Profile {
     id: string;
