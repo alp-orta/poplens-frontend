@@ -8,6 +8,7 @@ import useReviewService from '../hooks/useReviewService';
 import ReviewCard from '../components/ReviewCard';
 import dayjs from 'dayjs';
 import { MediaMainPageReviewInfo } from '../models/Review/MediaMainPageReviewInfo';
+import ReviewModal from '../components/ReviewModal';
 
 // Styled components for the page layout
 const PageContainer = styled.div`
@@ -131,6 +132,24 @@ const NoReviewsMessage = styled.p`
   padding: 40px 0;
 `;
 
+const BeFirstButton = styled.button`
+  background-color: #E91E63;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 25px;
+  border: none;
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: block;
+  margin: 20px auto;
+  
+  &:hover {
+    background-color: #C2185B;
+  }
+`;
 // This interface extends the Review interface to include user/media details for display
 interface ReviewWithDetails extends Review {
     username?: string;
@@ -150,8 +169,34 @@ const MediaDetailsPage: React.FC = () => {
     const [reviewInfo, setReviewInfo] = useState<MediaMainPageReviewInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
     const reviewService = useReviewService();
+
+    const handleReviewPosted = (newReview: any) => {
+        // Update the UI with the new review
+        if (reviewInfo) {
+            setReviewInfo({
+                ...reviewInfo,
+                recentReviews: [newReview, ...(reviewInfo.recentReviews || [])],
+                // Update rating chart data (simplified)
+                ratingChartInfo: {
+                    ...reviewInfo.ratingChartInfo,
+                    [newReview.rating]: (reviewInfo.ratingChartInfo[newReview.rating] || 0) + 1
+                }
+            });
+        } else {
+            // Create new reviewInfo object if none exists
+            setReviewInfo({
+                ratingChartInfo: { [newReview.rating]: 1 },
+                popularReviews: [newReview],
+                recentReviews: [newReview]
+            });
+        }
+        
+        // Close the modal after posting
+        setIsReviewModalOpen(false);
+    };
 
     const getCreatorInfo = (media: any): string => {
         switch (media.type) {
@@ -213,7 +258,11 @@ const MediaDetailsPage: React.FC = () => {
     // Render the rating distribution chart
     const renderRatingChart = () => {
         if (!reviewInfo?.ratingChartInfo || Object.keys(reviewInfo.ratingChartInfo).length === 0) {
-            return <NoReviewsMessage>No ratings yet</NoReviewsMessage>;
+            return (
+                <>
+                    <NoReviewsMessage>No ratings yet</NoReviewsMessage>
+                </>
+            );
         }
 
         // Get total number of ratings
@@ -331,9 +380,14 @@ const MediaDetailsPage: React.FC = () => {
                     <MediaDescription>
                         {media.description || 'No description available.'}
                     </MediaDescription>
+
+                    <BeFirstButton onClick={() => setIsReviewModalOpen(true)}>
+                        {(!reviewInfo || (reviewInfo.popularReviews.length === 0 && reviewInfo.recentReviews.length === 0)) 
+                            ? "Be the first to review!" 
+                            : "Write a review"}
+                    </BeFirstButton>
                 </MediaInfo>
             </MediaHeader>
-
             <SectionTitle>Rating Distribution</SectionTitle>
             {isLoading ? <LoadingContainer>Loading ratings...</LoadingContainer> : renderRatingChart()}
 
@@ -343,6 +397,12 @@ const MediaDetailsPage: React.FC = () => {
                     {renderReviewSection('Recent Reviews', reviewInfo.recentReviews)}
                 </>
             )}
+            <ReviewModal 
+                isOpen={isReviewModalOpen}
+                onClose={() => setIsReviewModalOpen(false)}
+                onReviewPosted={handleReviewPosted}
+                initialMedia={media}
+            />
         </PageContainer>
     );
 };

@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuthContext } from '../managers/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../assets/PopLensLogo.png';
 import ReviewModal from './ReviewModal';
+import useSearchService from '../hooks/useSearchService';
+import Media from '../models/Media/Media';
+import { User } from '../models/User';
+import { MediaType } from '../models/MediaType';
 
 
 const LayoutContainer = styled.div`
@@ -246,12 +250,88 @@ const RightSidebar = styled.div`
   height: 100vh;
   overflow-y: auto; // Allow scrolling if content is too tall
 `;
+
+const ResultTitle = styled.span`
+  font-weight: bold;
+  color: white;
+`;
+
+const ResultSubtitle = styled.span`
+  font-size: 12px;
+  color: #8899a6;
+`;
+
+const ResultCategory = styled.div`
+  padding: 8px 16px;
+  font-weight: bold;
+  color: #8899a6;
+  background-color: #15202B;
+`;
+
+const NoResults = styled.div`
+  padding: 16px;
+  text-align: center;
+  color: #8899a6;
+`;
+
+const SearchResults = styled.div`
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  background-color: #192734;
+  border-radius: 8px;
+  border: 1px solid #38444d;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 100;
+`;
+
+const SearchResultItem = styled.div`
+  padding: 12px 16px;
+  border-bottom: 1px solid #38444d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: rgba(233, 30, 99, 0.1);
+  }
+`;
+
+const ResultImage = styled.img<{ isUser?: boolean }>`
+  width: ${props => props.isUser ? '40px' : '30px'};
+  height: ${props => props.isUser ? '40px' : '45px'};
+  border-radius: ${props => props.isUser ? '50%' : '4px'};
+  object-fit: cover;
+  background-color: #192734;
+`;
+
+const ResultInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-width: 0; // This helps with text overflow
+`;
+
 const Layout: React.FC = () => {
   const { user, logout } = useAuthContext();
   const location = useLocation();
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ media: Media[], users: any[] }>({ media: [], users: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
+  const searchService = useSearchService();
+  const navigate = useNavigate();
   // Add this function to handle new reviews
   const onReviewPosted = (newReview: any) => {
     // If the current profile matches the logged-in user
@@ -265,6 +345,81 @@ const Layout: React.FC = () => {
   const handleLogout = () => {
     logout();
     window.location.href = '/login';
+  };
+
+  useEffect(() => {
+    const handleSearch = async () => {
+      if (searchQuery.trim().length < 2) {
+        setSearchResults({ media: [], users: [] });
+        return;
+      }
+      
+      try {
+        setIsSearching(true);
+        const response = await searchService.searchMediaAndUsers(searchQuery);
+        setSearchResults(response.data);
+      } catch (error) {
+        console.error('Search failed:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+    
+    // Debounce search input
+    const timeoutId = setTimeout(handleSearch, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+  
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  // Handle navigation to media or user page
+  const handleResultClick = (item: Media | User, isUser: boolean) => {
+    setShowResults(false);
+    setSearchQuery('');
+    
+    if (isUser) {
+      navigate(`/profile/${(item as User).username}`);
+    } else {
+      const media = item as Media;
+      const mediaPath = `/${getMediaPath(media.type)}/${media.title.replace(/ /g, '-').toLowerCase()}`;
+      navigate(mediaPath, { state: { media } });
+    }
+  };
+  
+  // Helper function to get media type path
+  const getMediaPath = (type: MediaType): string => {
+    switch (type) {
+      case MediaType.FILM: return 'films';
+      case MediaType.BOOK: return 'books';
+      case MediaType.GAME: return 'games';
+      default: return '';
+    }
+  };
+  
+  // Helper function to get cover image URL
+  const getCoverImageUrl = (media: Media): string => {
+    switch (media.type) {
+      case MediaType.GAME:
+        return `https://images.igdb.com/igdb/image/upload/t_cover_big${media.cachedImagePath}`;
+      case MediaType.BOOK:
+        return `https://books.google.com/books/content?id=${media.cachedImagePath}&printsec=frontcover&img=1&zoom=1`;
+      case MediaType.FILM:
+        return `https://image.tmdb.org/t/p/w500${media.cachedImagePath}`;
+      default:
+        return '';
+    }
   };
 
   return (
@@ -340,7 +495,7 @@ const Layout: React.FC = () => {
         {!user && (
           <SidebarCurtain />
         )}
-        <SearchContainer>
+        <SearchContainer ref={searchContainerRef}>
           <SearchIcon>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
@@ -349,7 +504,77 @@ const Layout: React.FC = () => {
           <SearchBar
             type="text"
             placeholder="Search PopLens"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setShowResults(true)}
           />
+          {showResults && searchQuery.trim().length >= 2 && (
+            <SearchResults>
+              {isSearching ? (
+                <NoResults>Searching...</NoResults>
+              ) : (
+                <>
+                  {searchResults.media.length === 0 && searchResults.users.length === 0 ? (
+                    <NoResults>No results found</NoResults>
+                  ) : (
+                    <>
+                      {searchResults.media.length > 0 && (
+                        <>
+                          <ResultCategory>Media</ResultCategory>
+                          {searchResults.media.map(media => (
+                            <SearchResultItem 
+                              key={`media-${media.id}`}
+                              onClick={() => handleResultClick(media, false)}
+                            >
+                              <ResultImage 
+                                src={getCoverImageUrl(media)} 
+                                alt={media.title}
+                                onError={(e) => {
+                                  e.currentTarget.src = 'https://via.placeholder.com/40x40?text=?';
+                                }}
+                              />
+                              <ResultInfo>
+                                <ResultTitle>{media.title}</ResultTitle>
+                                <ResultSubtitle>
+                                  {media.type === MediaType.FILM ? 'Film' : 
+                                  media.type === MediaType.BOOK ? 'Book' : 'Game'}
+                                  {media.type === MediaType.FILM && media.director && ` • ${media.director}`}
+                                  {media.type === MediaType.BOOK && media.writer && ` • ${media.writer}`}
+                                  {media.type === MediaType.GAME && media.publisher && ` • ${media.publisher}`}
+                                </ResultSubtitle>
+                              </ResultInfo>
+                            </SearchResultItem>
+                          ))}
+                        </>
+                      )}
+                      
+                      {searchResults.users.length > 0 && (
+                        <>
+                          <ResultCategory>Users</ResultCategory>
+                          {searchResults.users.map(user => (
+                            <SearchResultItem 
+                              key={`user-${user.profileId}`}
+                              onClick={() => handleResultClick(user, true)}
+                            >
+                              <ResultImage 
+                                isUser={true}
+                                src={"https://secure.gravatar.com/avatar/?s=40&d=identicon"} 
+                                alt={user.userName}
+                              />
+                              <ResultInfo>
+                                <ResultTitle>{user.userName}</ResultTitle>
+                                <ResultSubtitle>{user.userName}</ResultSubtitle>
+                              </ResultInfo>
+                            </SearchResultItem>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </SearchResults>
+          )}
         </SearchContainer>
       </RightSidebar>
       <ReviewModal

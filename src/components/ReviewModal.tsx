@@ -251,9 +251,10 @@ interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onReviewPosted?: (review: any) => void;
+  initialMedia?: Media; 
 }
 
-const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, onReviewPosted }) => {
+const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, onReviewPosted, initialMedia }) => {
   const { user } = useAuthContext();
   const [selectedType, setSelectedType] = useState<MediaType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -267,6 +268,18 @@ const ReviewModal: React.FC<ReviewModalProps> = ({ isOpen, onClose, onReviewPost
 
   const reviewService = useReviewService();
   const mediaService = useMediaService();
+
+  useEffect(() => {
+    if (isOpen && initialMedia) {
+      // Reset the form and set the media when the modal opens
+      setSelectedMedia(initialMedia);
+      setSelectedType(initialMedia.type);
+      setRating(0); // Reset rating
+      setReview(''); // Reset review content
+      setSearchQuery(''); // Reset search
+      setSearchResults([]); // Clear search results
+    }
+  }, [initialMedia, isOpen]);
 
   const handleSubmitReview = async () => {
     if (!selectedMedia || !rating || !review.trim() || !user?.profileId) {
