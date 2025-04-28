@@ -16,14 +16,14 @@ const LayoutContainer = styled.div`
   min-height: 100vh;
   background-color: #15202B;
   color: white;
-  padding-left: 150px;
+  padding-left: 10%;
 `;
 const MainContent = styled.main`
   flex: 1;
   max-width: 600px;
   border-right: 1px solid #38444d;
-  margin-left: 275px; // Match Sidebar width
-  margin-right: 350px; // Match RightSidebar width
+  margin-left: 20%; // Match Sidebar width
+  margin-right: 25%; // Match RightSidebar width
 `;
 const SearchContainer = styled.div`
   position: relative;
@@ -230,19 +230,19 @@ const LoginLink = styled(Link)`
   }
 `;
 
-const Sidebar = styled.div`
-  width: 275px;
+const LeftSidebar = styled.div`
+  width: 18%;
   padding: 20px;
   position: fixed;
   top: 0;
-  left: 150px; // Match the LayoutContainer padding-left
+  left: 10%; // Match the LayoutContainer padding-left
   height: 100vh;
   border-right: 1px solid #38444d;
   overflow-y: auto; // Allow scrolling if content is too tall
 `;
 
 const RightSidebar = styled.div`
-  width: 350px;
+  width: 25%;
   padding: 20px;
   position: fixed;
   top: 0;
@@ -424,7 +424,7 @@ const Layout: React.FC = () => {
 
   return (
     <LayoutContainer>
-      <Sidebar>
+      <LeftSidebar>
         {!user && (
           <SidebarCurtain />
         )}
@@ -481,7 +481,7 @@ const Layout: React.FC = () => {
         <LogButton as="button" onClick={() => setIsReviewModalOpen(true)}>
           <span>Pop a Review!</span>
         </LogButton>
-      </Sidebar>
+      </LeftSidebar>
       <MainContent>
         {!user && !isAuthPage && (
           <MainLoginPrompt>
