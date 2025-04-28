@@ -4,13 +4,13 @@ import { MediaMainPageReviewInfo } from "../models/Review/MediaMainPageReviewInf
 
 const useReviewService = () => {
   const addReview = async (
-    profileId: string, 
+    profileId: string,
     request: CreateReviewRequest
   ): Promise<{ data: any }> => {
     return makeRequest(
-      "Review", 
-      `${profileId}/addReview`, 
-      "POST", 
+      "Review",
+      `${profileId}/addReview`,
+      "POST",
       request
     );
   };
@@ -36,7 +36,32 @@ const useReviewService = () => {
     );
   };
 
-  return { addReview, deleteReview, getMediaMainPageReviewInfo };
+  // Add new like-related functions
+  const addLike = async (profileId: string, reviewId: string): Promise<{ data: any }> => {
+    return makeRequest("Review", `${profileId}/${reviewId}/Like`, "POST");
+  };
+
+  const removeLike = async (profileId: string, reviewId: string): Promise<{ data: any }> => {
+    return makeRequest("Review", `${profileId}/${reviewId}/Unlike`, "DELETE");
+  };
+
+  const getLikeCount = async (reviewId: string): Promise<{ data: number }> => {
+    return makeRequest("Review", `${reviewId}/LikeCount`, "GET");
+  };
+
+  const hasUserLiked = async (profileId: string, reviewId: string): Promise<{ data: boolean }> => {
+    return makeRequest("Review", `${profileId}/${reviewId}/HasLiked`, "GET");
+  };
+
+  return {
+    addReview,
+    deleteReview,
+    getMediaMainPageReviewInfo,
+    addLike,
+    removeLike,
+    getLikeCount,
+    hasUserLiked
+  };
 };
 
 export default useReviewService;

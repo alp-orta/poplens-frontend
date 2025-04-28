@@ -390,7 +390,7 @@ const Layout: React.FC = () => {
     setSearchQuery('');
     
     if (isUser) {
-      navigate(`/profile/${(item as User).username}`);
+      navigate(`/profile/${(item as any).userName}`);
     } else {
       const media = item as Media;
       const mediaPath = `/${getMediaPath(media.type)}/${media.title.replace(/ /g, '-').toLowerCase()}`;

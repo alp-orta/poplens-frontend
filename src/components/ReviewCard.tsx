@@ -210,6 +210,10 @@ const DropdownMenu = styled.div`
   margin-top: -5px; // Added negative margin to move it up
 `;
 
+const LikedActionButton = styled(ActionButton)`
+  color: #E91E63;
+`;
+
 interface MediaInfoProps {
   type: MediaType;
   title: string;
@@ -243,7 +247,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   rating,
   content,
   timestamp,
-  likes,
+  likes: initialLikes,
   comments,
   onDelete
 }) => {
@@ -252,6 +256,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isOwnReview = currentUser?.profileId === profileId;
+
+  const [likeCount, setLikeCount] = useState(initialLikes);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -309,6 +317,52 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
     }
   };
 
+  // Check if the current user has liked this review
+  useEffect(() => {
+    const checkUserLiked = async () => {
+      if (currentUser?.profileId) {
+        try {
+          const response = await reviewService.hasUserLiked(currentUser.profileId, id);
+          setHasLiked(response.data);
+          
+          // Also fetch the current like count
+          const countResponse = await reviewService.getLikeCount(id);
+          setLikeCount(countResponse.data);
+        } catch (error) {
+          console.error('Failed to check like status:', error);
+        }
+      }
+    };
+    
+    checkUserLiked();
+  }, [id, currentUser?.profileId, reviewService]);
+
+  // Handle like/unlike action
+  const handleLikeToggle = async () => {
+    if (!currentUser?.profileId || isLiking) return;
+    
+    try {
+      setIsLiking(true);
+      
+      if (hasLiked) {
+        // Unlike the review
+        await reviewService.removeLike(currentUser.profileId, id);
+        setLikeCount(prev => Math.max(0, prev - 1));
+      } else {
+        // Like the review
+        await reviewService.addLike(currentUser.profileId, id);
+        setLikeCount(prev => prev + 1);
+      }
+      
+      setHasLiked(!hasLiked);
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+    } finally {
+      setIsLiking(false);
+    }
+  };
+
+
   return (
     <Card>
       <CardHeader>
@@ -364,12 +418,21 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
 
 
       <ActionButtons>
-        <ActionButton>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-          {likes}
-        </ActionButton>
+        {hasLiked ? (
+          <LikedActionButton onClick={handleLikeToggle} disabled={isLiking}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+            {likeCount}
+          </LikedActionButton>
+        ) : (
+          <ActionButton onClick={handleLikeToggle} disabled={isLiking}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+            {likeCount}
+          </ActionButton>
+        )}
         <ActionButton>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z" />
