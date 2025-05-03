@@ -13,6 +13,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const FeedToggle = styled.div`
   display: flex;
   border-bottom: 1px solid #38444d;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #15202B; // Match your app's background color
+  width: 100%;
 `;
 
 const TabButton = styled.button<{ active?: boolean }>`
@@ -40,6 +45,7 @@ const TabButton = styled.button<{ active?: boolean }>`
 
 const Feed = styled.div`
   padding: 20px;
+  padding-top: 16px; // Adjusted padding for better spacing
 `;
 
 const LoadingContainer = styled.div`
@@ -68,6 +74,22 @@ const Home: React.FC = () => {
   const initialLoadCompletedRef = useRef(false);
   const fetchInProgressRef = useRef(false);
   const restoredFromNavigationRef = useRef(false);
+
+  const [followingTabState, setFollowingTabState] = useState({
+    reviews: [] as ReviewProfileDetail[],
+    page: 1,
+    hasMore: true,
+    loadedPages: new Set<number>(),
+    scrollPosition: 0
+  });
+
+  const [forYouTabState, setForYouTabState] = useState({
+    reviews: [] as ReviewProfileDetail[],
+    page: 1,
+    hasMore: true,
+    loadedPages: new Set<number>(),
+    scrollPosition: 0
+  });
 
   // 1. RESTORATION LOGIC - Only run once when component mounts
   useEffect(() => {
@@ -139,25 +161,83 @@ const Home: React.FC = () => {
     fetchReviews();
   }, [page, user?.profileId]);
 
-  // 3. TAB SWITCH LOGIC - Check for restoration before resetting
+  // Track current tab scroll position
   useEffect(() => {
-    // SKIP RESET if this is the initial render AND we restored from navigation
-    if (restoredFromNavigationRef.current) {
-      restoredFromNavigationRef.current = false; // Reset for future tab changes
-      return;
+    // Save scroll position when switching tabs
+    return () => {
+      if (activeTab === 'following') {
+        setFollowingTabState(prev => ({
+          ...prev,
+          scrollPosition: window.scrollY
+        }));
+      } else {
+        setForYouTabState(prev => ({
+          ...prev,
+          scrollPosition: window.scrollY
+        }));
+      }
+    };
+  }, [activeTab]);
+
+  // Modified TAB SWITCH LOGIC - Restore state instead of resetting
+  useEffect(() => {
+    // Save current tab state before switching
+    if (activeTab === 'for-you') {
+      // Switching FROM following tab, save its state
+      setFollowingTabState({
+        reviews,
+        page,
+        hasMore,
+        loadedPages: loadedPagesRef.current,
+        scrollPosition: window.scrollY
+      });
+
+      // Restore "For You" tab state
+      setReviews(forYouTabState.reviews);
+      setPage(forYouTabState.page);
+      setHasMore(forYouTabState.hasMore);
+      loadedPagesRef.current = forYouTabState.loadedPages;
+
+      // Restore scroll position after render
+      setTimeout(() => {
+        window.scrollTo(0, forYouTabState.scrollPosition);
+      }, 0);
+
+    } else {
+      // Switching FROM "For You" tab, save its state
+      setForYouTabState({
+        reviews,
+        page,
+        hasMore,
+        loadedPages: loadedPagesRef.current,
+        scrollPosition: window.scrollY
+      });
+
+      // Restore Following tab state
+      setReviews(followingTabState.reviews);
+      setPage(followingTabState.page);
+      setHasMore(followingTabState.hasMore);
+      loadedPagesRef.current = followingTabState.loadedPages;
+
+      // Restore scroll position after render
+      setTimeout(() => {
+        window.scrollTo(0, followingTabState.scrollPosition);
+      }, 0);
     }
 
-    // Otherwise proceed with reset
-    setReviews([]);
-    setPage(1);
-    setHasMore(true);
-    loadedPagesRef.current = new Set();
-    initialLoadCompletedRef.current = false;
+    // If the tab we're switching to has no data yet, fetch it
+    if ((activeTab === 'following' && followingTabState.reviews.length === 0) ||
+      (activeTab === 'for-you' && forYouTabState.reviews.length === 0)) {
+      // Clean slate for new tab with no data
+      setReviews([]);
+      setPage(1);
+      setHasMore(true);
+      loadedPagesRef.current = new Set();
 
-    // IMPORTANT: Force a fetch when switching to following tab
-    if (activeTab === 'following' && user?.profileId) {
-      // Small timeout to ensure state updates have processed
-      setTimeout(() => fetchReviews(), 0);
+      // Fetch if needed (for following tab only for now)
+      if (activeTab === 'following' && user?.profileId) {
+        setTimeout(() => fetchReviews(), 0);
+      }
     }
   }, [activeTab]);
 
