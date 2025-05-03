@@ -181,6 +181,10 @@ const Home: React.FC = () => {
 
   // Modified TAB SWITCH LOGIC - Restore state instead of resetting
   useEffect(() => {
+    if (restoredFromNavigationRef.current) {
+      restoredFromNavigationRef.current = false; // Reset for future tab changes
+      return;
+    }
     // Save current tab state before switching
     if (activeTab === 'for-you') {
       // Switching FROM following tab, save its state
