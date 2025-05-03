@@ -74,6 +74,7 @@ const Home: React.FC = () => {
   const initialLoadCompletedRef = useRef(false);
   const fetchInProgressRef = useRef(false);
   const restoredFromNavigationRef = useRef(false);
+  const currentScrollPositionRef = useRef(0);
 
   const [followingTabState, setFollowingTabState] = useState({
     reviews: [] as ReviewProfileDetail[],
@@ -91,6 +92,30 @@ const Home: React.FC = () => {
     scrollPosition: 0
   });
 
+  // Track scroll position in real-time
+  useEffect(() => {
+    // Update scroll position whenever user scrolls
+    const handleScroll = () => {
+      currentScrollPositionRef.current = window.scrollY;
+    };
+
+    // Add scroll event listener
+    window.addEventListener('scroll', handleScroll);
+
+    // Clean up
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  const restoreScrollPosition = (position: number) => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.scrollTo(0, position);
+      }, 10);
+    });
+  };
+
   // 1. RESTORATION LOGIC - Only run once when component mounts
   useEffect(() => {
     // Check if we're returning with preserved state
@@ -105,9 +130,8 @@ const Home: React.FC = () => {
       restoredFromNavigationRef.current = true;
 
       // Restore scroll position AFTER the DOM updates
-      requestAnimationFrame(() => {
-        window.scrollTo(0, location.state.scrollPosition || 0);
-      });
+      const scrollPos = location.state.scrollPosition || 0;
+      restoreScrollPosition(scrollPos);
     } else {
       // Fresh load - reset everything
       setReviews([]);
@@ -193,7 +217,7 @@ const Home: React.FC = () => {
         page,
         hasMore,
         loadedPages: loadedPagesRef.current,
-        scrollPosition: window.scrollY
+        scrollPosition: currentScrollPositionRef.current
       });
 
       // Restore "For You" tab state
@@ -203,9 +227,7 @@ const Home: React.FC = () => {
       loadedPagesRef.current = forYouTabState.loadedPages;
 
       // Restore scroll position after render
-      setTimeout(() => {
-        window.scrollTo(0, forYouTabState.scrollPosition);
-      }, 0);
+      restoreScrollPosition(forYouTabState.scrollPosition);
 
     } else {
       // Switching FROM "For You" tab, save its state
@@ -214,7 +236,7 @@ const Home: React.FC = () => {
         page,
         hasMore,
         loadedPages: loadedPagesRef.current,
-        scrollPosition: window.scrollY
+        scrollPosition: currentScrollPositionRef.current
       });
 
       // Restore Following tab state
@@ -224,9 +246,8 @@ const Home: React.FC = () => {
       loadedPagesRef.current = followingTabState.loadedPages;
 
       // Restore scroll position after render
-      setTimeout(() => {
-        window.scrollTo(0, followingTabState.scrollPosition);
-      }, 0);
+      restoreScrollPosition(followingTabState.scrollPosition);
+      
     }
 
     // If the tab we're switching to has no data yet, fetch it
