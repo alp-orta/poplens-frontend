@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import ReviewCard from '../components/ReviewCard';
 import { MediaType } from '../models/MediaType';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Review } from '../models/Review/Review';
 import { useAuthContext } from '../managers/AuthContext';
 import { Profile } from '../models/profile/Profile';
@@ -141,19 +141,55 @@ const UserProfile: React.FC = () => {
   const [profileId, setProfileId] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
+  const currentScrollPositionRef = useRef(0);
+
+   // Track scroll position in real-time
+   useEffect(() => {
+    const handleScroll = () => {
+      currentScrollPositionRef.current = window.scrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   useEffect(() => {
     // Check if this is a return navigation with preserved state
-    if (location.state?.preserved && typeof location.state.scrollPosition === 'number') {
-      // Add a slight delay to ensure the DOM has updated before scrolling
-      const timeoutId = setTimeout(() => {
-        window.scrollTo(0, location.state.scrollPosition);
-      }, 100);
+    if (location.state?.preserved) {
+      // Restore profile data if it exists in state
+      if (location.state.profileData) {
+        setProfileData(location.state.profileData);
+        setIsLoading(false); // Skip loading state since we have data
+      }
       
-      return () => clearTimeout(timeoutId);
+      // Restore scroll position with multiple attempts
+      if (typeof location.state.scrollPosition === 'number') {
+        const scrollPos = location.state.scrollPosition;
+        
+        // Try multiple times to ensure DOM is ready
+        setTimeout(() => {
+          window.scrollTo(0, scrollPos);
+        }, 10);
+      }
     }
-  }, [location]);
+  }, [location.state]);
+
+   // Add a handler for viewing comments/reviews
+   const handleViewComments = (reviewId: string) => {
+    navigate(`/reviews/${reviewId}`, {
+      state: {
+        preserved: true,
+        profileData: profileData, // Save complete profile data
+        scrollPosition: currentScrollPositionRef.current,
+        from: location,
+      }
+    });
+  };
 
 
   const handleDeleteReview = (reviewId: string) => {
@@ -171,6 +207,9 @@ const UserProfile: React.FC = () => {
   };
 
   useEffect(() => {
+    if (location.state?.preserved && location.state.profileData) {
+      return;
+    }
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
@@ -211,7 +250,7 @@ const UserProfile: React.FC = () => {
     if (username) {
       fetchProfile();
     }
-  }, [username, user?.profileId]);
+  }, [username, user?.profileId, location.state?.preserved]);
 
   const handleFollowClick = async () => {
     if (!user?.profileId || !profileId) return;
@@ -339,6 +378,7 @@ const UserProfile: React.FC = () => {
               likes={0}
               comments={0}
               onDelete={() => handleDeleteReview(review.id)}
+              onViewComments={() => handleViewComments(review.id)}
             />
           ))}
         </ReviewsContainer>
