@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import ReviewCard from '../components/ReviewCard';
 import { MediaType } from '../models/MediaType';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { Review } from '../models/Review/Review';
 import { useAuthContext } from '../managers/AuthContext';
 import { Profile } from '../models/profile/Profile';
@@ -141,7 +141,19 @@ const UserProfile: React.FC = () => {
   const [profileId, setProfileId] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [isFollowLoading, setIsFollowLoading] = useState(false);
-  const reviewService = useReviewService();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if this is a return navigation with preserved state
+    if (location.state?.preserved && typeof location.state.scrollPosition === 'number') {
+      // Add a slight delay to ensure the DOM has updated before scrolling
+      const timeoutId = setTimeout(() => {
+        window.scrollTo(0, location.state.scrollPosition);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [location]);
 
 
   const handleDeleteReview = (reviewId: string) => {

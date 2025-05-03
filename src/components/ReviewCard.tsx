@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { MediaType } from '../models/MediaType';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import useReviewService from '../hooks/useReviewService';
 import { useAuthContext } from '../managers/AuthContext';
@@ -236,6 +236,7 @@ interface ReviewCardProps {
   likes: number;
   comments: number;
   onDelete?: () => void; // Add callback for when review is deleted
+  onViewComments?: (reviewId: string) => void;
 }
 
 const ReviewCard: React.FC<ReviewCardProps> = ({
@@ -249,17 +250,35 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   timestamp,
   likes: initialLikes,
   comments,
-  onDelete
+  onDelete,
+  onViewComments
 }) => {
   const { user: currentUser } = useAuthContext();
   const reviewService = useReviewService();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isOwnReview = currentUser?.profileId === profileId;
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [likeCount, setLikeCount] = useState(initialLikes);
   const [hasLiked, setHasLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [commentCount, setCommentCount] = useState(comments);
+
+  const handleViewComments = () => {
+    if (onViewComments) {
+      onViewComments(id);
+    } else {
+      // Default behavior (fallback)
+      navigate(`/reviews/${id}`, {
+        state: {
+          from: location,
+          scrollPosition: window.scrollY
+        }
+      });
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -363,6 +382,21 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   };
 
 
+  // Optionally, you might want to fetch the current comment count
+  useEffect(() => {
+    const fetchCommentCount = async () => {
+      try {
+        // If you have an API endpoint to get comment count
+        const response = await reviewService.getCommentCount(id);
+        setCommentCount(response.data);
+      } catch (error) {
+        console.error('Failed to fetch comment count:', error);
+      }
+    };
+    
+    fetchCommentCount();
+  }, [id]);
+
   return (
     <Card>
       <CardHeader>
@@ -433,11 +467,11 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             {likeCount}
           </ActionButton>
         )}
-        <ActionButton>
+        <ActionButton onClick={handleViewComments}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z" />
           </svg>
-          {comments}
+          {commentCount}
         </ActionButton>
         <Timestamp>{timestamp}</Timestamp>
       </ActionButtons>

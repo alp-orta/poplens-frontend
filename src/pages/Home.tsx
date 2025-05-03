@@ -8,6 +8,7 @@ import useFeedService from '../hooks/useFeedService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { ReviewDetail } from '../models/Review/ReviewDetail';
 import { ReviewProfileDetail } from '../models/Feed/ReviewProfileDetail';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const FeedToggle = styled.div`
   display: flex;
@@ -49,73 +50,149 @@ const LoadingContainer = styled.div`
   border-top: 1px solid #38444d;
 `;
 const Home: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
+  const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('following');
   const { user } = useAuthContext();
   const feedService = useFeedService();
+  const navigate = useNavigate();
+  const location = useLocation();
 
+  // State
   const [reviews, setReviews] = useState<ReviewProfileDetail[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const observer = useRef<IntersectionObserver>();
 
+  // Refs
+  const observer = useRef<IntersectionObserver>();
+  const loadedPagesRef = useRef<Set<number>>(new Set());
+  const initialLoadCompletedRef = useRef(false);
+  const fetchInProgressRef = useRef(false);
+  const restoredFromNavigationRef = useRef(false);
+
+  // 1. RESTORATION LOGIC - Only run once when component mounts
+  useEffect(() => {
+    // Check if we're returning with preserved state
+    if (location.state?.preserved) {
+      // Restore all state from navigation
+      setReviews(location.state.reviews || []);
+      setPage(location.state.page || 1);
+      setHasMore(location.state.hasMore !== false);
+      loadedPagesRef.current = new Set(location.state.loadedPages || [1]);
+
+      // FLAG THAT RESTORATION HAPPENED - this is the key change
+      restoredFromNavigationRef.current = true;
+
+      // Restore scroll position AFTER the DOM updates
+      requestAnimationFrame(() => {
+        window.scrollTo(0, location.state.scrollPosition || 0);
+      });
+    } else {
+      // Fresh load - reset everything
+      setReviews([]);
+      setPage(1);
+      setHasMore(true);
+      loadedPagesRef.current = new Set();
+      initialLoadCompletedRef.current = false;
+    }
+  }, []); // Empty dependency array - run ONCE on mount
+
+  // Fetch the current page
+  const fetchReviews = async () => {
+    // Use the ref for synchronous checking
+    if (fetchInProgressRef.current) return;
+
+    if (
+      !user?.profileId ||
+      loadedPagesRef.current.has(page)
+    ) {
+      return;
+    }
+
+    // Set both the ref (synchronous) and state (async)
+    fetchInProgressRef.current = true;
+    setLoading(true);
+
+    try {
+      const response = await feedService.getFollowerFeed(user.profileId, page);
+      const newReviews = response.data.result;
+
+      setReviews(prev => [...prev, ...newReviews]);
+      setHasMore(newReviews.length > 0);
+      loadedPagesRef.current.add(page);
+      initialLoadCompletedRef.current = true;
+    } catch (e) {
+      console.error('Failed to fetch reviews:', e);
+      setHasMore(false);
+    } finally {
+      // Reset both tracking mechanisms
+      fetchInProgressRef.current = false;
+      setLoading(false);
+    }
+  };
+
+  // 2. FETCH LOGIC - Only fetches new pages when needed
+  useEffect(() => {
+    // Skip if:
+    // - We're loading
+    // - No user
+    // - This page is already loaded
+    fetchReviews();
+  }, [page, user?.profileId]);
+
+  // 3. TAB SWITCH LOGIC - Check for restoration before resetting
+  useEffect(() => {
+    // SKIP RESET if this is the initial render AND we restored from navigation
+    if (restoredFromNavigationRef.current) {
+      restoredFromNavigationRef.current = false; // Reset for future tab changes
+      return;
+    }
+
+    // Otherwise proceed with reset
+    setReviews([]);
+    setPage(1);
+    setHasMore(true);
+    loadedPagesRef.current = new Set();
+    initialLoadCompletedRef.current = false;
+
+    // IMPORTANT: Force a fetch when switching to following tab
+    if (activeTab === 'following' && user?.profileId) {
+      // Small timeout to ensure state updates have processed
+      setTimeout(() => fetchReviews(), 0);
+    }
+  }, [activeTab]);
+
+  // 4. INTERSECTION OBSERVER - For infinite scrolling
   const lastReviewElementRef = useCallback((node: HTMLDivElement) => {
-    if (loading || !hasMore) return; // Don't observe when loading or no more data
+    if (loading || !hasMore) return;
 
     if (observer.current) observer.current.disconnect();
 
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore && !loading) {
-        // Only trigger next page load if we're not already loading
-        setPage(prevPage => prevPage + 1);
+        const nextPage = page + 1;
+        if (!loadedPagesRef.current.has(nextPage)) {
+          setPage(nextPage);
+        }
       }
     });
 
     if (node) observer.current.observe(node);
-  }, [loading, hasMore]);
+  }, [loading, hasMore, page]);
 
-  const fetchReviews = async () => {
-    if (!user?.profileId || loading || !hasMore) return;
-  
-    try {
-      setLoading(true);
-      const response = await feedService.getFollowerFeed(user.profileId, page);
-  
-      const newReviews = response.data.result;
-      
-      // If we received empty results, stop pagination
-      if (newReviews.length === 0) {
-        setHasMore(false);
-        return;
+  // 5. NAVIGATION HANDLER - Save all state when navigating to a review
+  const handleViewComments = (reviewId: string) => {
+    navigate(`/reviews/${reviewId}`, {
+      state: {
+        preserved: true,
+        reviews,
+        page,
+        hasMore,
+        loadedPages: Array.from(loadedPagesRef.current),
+        scrollPosition: window.scrollY,
+        from: location,
       }
-      
-      setReviews(prev => [...prev, ...newReviews]);
-      
-      // Simply assume there are more pages if we got results
-      setHasMore(true);
-      
-    } catch (error) {
-      console.error('Failed to fetch reviews:', error);
-      setHasMore(false); // Stop on error
-    } finally {
-      setLoading(false);
-    }
+    });
   };
-
-  useEffect(() => {
-    if (activeTab === 'following') {
-      setReviews([]);
-      setPage(1);
-      setHasMore(true);
-      fetchReviews();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab === 'following' && !loading) {
-      fetchReviews();
-    }
-  }, [page]);
 
   return (
     <>
@@ -142,6 +219,7 @@ const Home: React.FC = () => {
                 key={review.id}
               >
                 <ReviewCard
+                  onViewComments={handleViewComments}
                   key={review.id}
                   id={review.id}
                   mediaId={review.mediaId}
@@ -162,7 +240,7 @@ const Home: React.FC = () => {
                   timestamp={new Date(review.createdDate).toLocaleDateString()}
                   likes={0}
                   comments={0}
-                 />
+                />
               </div>
             ))}
             {loading && (

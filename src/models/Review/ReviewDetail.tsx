@@ -3,6 +3,7 @@ export interface ReviewDetail {
     content: string;
     rating: number;
     profileId: string;
+    username: string;
     mediaId: string;
     createdDate: string;
     lastUpdatedDate: string;
