@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import ReviewCard from './ReviewCard';
-import CommentSection from './CommentSection';
 import useReviewService from '../hooks/useReviewService';
 import { Review } from '../models/Review/Review';
-import LoadingSpinner from './LoadingSpinner';
 import { ReviewDetail } from '../models/Review/ReviewDetail';
 import { MediaType } from '../models/MediaType';
+import CommentSection from '../components/CommentSection';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ReviewCard from '../components/ReviewCard';
 
 const ThreadContainer = styled.div`
   max-width: 600px;

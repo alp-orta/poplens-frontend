@@ -10,7 +10,7 @@ import BooksPage from "../pages/Books";
 import FilmsPage from "../pages/Films";
 import GamesPage from "../pages/Games";
 import MediaDetailsPage from "../pages/MediaDetails";
-import ReviewThread from "../components/ReviewThread";
+import ReviewThread from "../pages/ReviewThread";
 
 const routes = createBrowserRouter([
   {
@@ -18,10 +18,10 @@ const routes = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <Navigate to="/login" replace /> }, // Use index route
-      { path: "login", element: <Login /> },                      // Remove leading slash
-      { path: "register", element: <Register /> },                // Remove leading slash
-      { path: "home", element: <Home /> },                        // Remove leading slash
-      { path: "profile/:username", element: <UserProfile /> },    // Remove leading slash
+      { path: "login", element: <Login /> },                     
+      { path: "register", element: <Register /> },                
+      { path: "home", element: <Home /> },                        
+      { path: "profile/:username", element: <UserProfile /> },    
       { path: "films", element: <FilmsPage /> },
       { path: "books", element: <BooksPage /> },
       { path: "games", element: <GamesPage /> },
