@@ -143,6 +143,17 @@ const useReviewService = () => {
     );
   };
 
+  const getReplyCount = async (
+    parentCommentId: string
+  ): Promise<{ data: number }> => {
+    return makeRequest(
+      "Review",
+      `${parentCommentId}/ReplyCount`,
+      "GET"
+    );
+  };
+
+
   return {
     getReviewById,
     getReviewDetail,
@@ -158,7 +169,8 @@ const useReviewService = () => {
     deleteComment,
     getTopLevelComments,
     getReplies,
-    getCommentCount
+    getCommentCount,
+    getReplyCount
   };
 };
 

@@ -11,5 +11,6 @@ export interface Comment {
     username?: string;
     profileImageUrl?: string;
     replies?: Comment[];
+    detailedReplies?: Comment[];
     replyCount?: number;
   }
