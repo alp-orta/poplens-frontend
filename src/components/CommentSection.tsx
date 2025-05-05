@@ -255,27 +255,85 @@ const CommentSection: React.FC<CommentSectionProps> = ({ reviewId }) => {
   };
 
   // When adding a reply, make sure to update the count correctly
-  const handleSubmitReply = async (parentCommentId: string) => {
-    if (!user || !replyText.trim()) return;
+  // Updated handleSubmitReply function with optimistic updates
+const handleSubmitReply = async (parentCommentId: string) => {
+  if (!user || !replyText.trim()) return;
 
-    try {
-      setIsLoading(true);
-      await reviewService.addComment(user.profileId, reviewId, {
-        content: replyText.trim(),
-        parentCommentId,
-      });
-      setReplyText('');
-      setReplyingTo(null);
-
-      // Always refresh all comments after adding a reply
-      // This ensures we get the updated detailedReplies
-      fetchComments();
-    } catch (error) {
-      console.error('Failed to post reply:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  // Create optimistic reply object
+  const optimisticReply: Comment = {
+    id: `temp-${Date.now()}`, // Temporary ID until real one comes from server
+    reviewId: reviewId,
+    parentCommentId: parentCommentId,
+    content: replyText.trim(),
+    username: user.username || 'You',
+    profileId: user.profileId,
+    createdDate: new Date().toISOString(),
+    lastUpdatedDate: new Date().toISOString(),
+    replyCount: 0,
+    detailedReplies: []
   };
+
+  // Optimistically update UI first using the same recursive pattern
+  const addReplyToComment = (comments: Comment[]): Comment[] => {
+    return comments.map(comment => {
+      // If this is the parent comment, add our reply to it
+      if (comment.id === parentCommentId) {
+        // Expand the comment to show the new reply
+        setExpandedComments(prev => ({
+          ...prev,
+          [parentCommentId]: true
+        }));
+        
+        return {
+          ...comment,
+          replyCount: (comment.replyCount || 0) + 1,
+          detailedReplies: [
+            ...(comment.detailedReplies || []),
+            optimisticReply
+          ]
+        };
+      }
+      
+      // If this comment has replies, recursively check them
+      if (comment.detailedReplies && comment.detailedReplies.length > 0) {
+        return {
+          ...comment,
+          detailedReplies: addReplyToComment(comment.detailedReplies)
+        };
+      }
+      
+      // Otherwise return the comment unchanged
+      return comment;
+    });
+  };
+  
+  // Update comments state optimistically
+  setComments(prevComments => addReplyToComment(prevComments));
+  
+  // Reset UI state
+  setReplyText('');
+  setReplyingTo(null);
+
+  // Actually submit to API
+  try {
+    setIsLoading(true);
+    await reviewService.addComment(user.profileId, reviewId, {
+      content: replyText.trim(),
+      parentCommentId,
+    });
+    
+    // No need to refresh all comments - our optimistic update is already showing
+    // We could fetch just this thread to get the real IDs if needed
+  } catch (error) {
+    console.error('Failed to post reply:', error);
+    
+    // On error, revert the optimistic update
+    // This is simplified - a more robust solution would track the temp ID
+    fetchComments();
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const renderCommentItem = (comment: Comment, isReply: boolean = false) => {
     const replyCount = comment.replyCount || 0;
