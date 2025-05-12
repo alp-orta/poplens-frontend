@@ -3,13 +3,11 @@ import styled from 'styled-components';
 import ReviewCard from '../components/ReviewCard';
 import { MediaType } from '../models/MediaType';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Review } from '../models/Review/Review';
 import { useAuthContext } from '../managers/AuthContext';
 import { Profile } from '../models/profile/Profile';
 import useProfileService from '../hooks/useProfileService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import useAuthService from '../hooks/useAuthService';
-import useReviewService from '../hooks/useReviewService';
 
 
 const ProfileContainer = styled.div`
@@ -139,7 +137,6 @@ const UserProfile: React.FC = () => {
   const profileService = useProfileService();
   const userAuthService = useAuthService();
   const [profileId, setProfileId] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -227,7 +224,6 @@ const UserProfile: React.FC = () => {
           currentUserId = profileResponse.data.userId;
         }
         setProfileId(currentProfileId);
-        setUserId(currentUserId);
 
         // Then fetch the full profile data using that profileId
         const response = await profileService.getProfile(currentProfileId);

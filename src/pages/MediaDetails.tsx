@@ -9,6 +9,7 @@ import ReviewCard from '../components/ReviewCard';
 import dayjs from 'dayjs';
 import { MediaMainPageReviewInfo } from '../models/Review/MediaMainPageReviewInfo';
 import ReviewModal from '../components/ReviewModal';
+import { useAuthContext } from '../managers/AuthContext';
 
 // Styled components for the page layout
 const PageContainer = styled.div`
@@ -162,6 +163,7 @@ interface ReviewWithDetails extends Review {
 const MediaDetailsPage: React.FC = () => {
     // Extract the media name from URL
     const { mediaName } = useParams<{ mediaName: string }>();
+    const { user } = useAuthContext();
     const location = useLocation();
 
     // State for the component
@@ -175,22 +177,27 @@ const MediaDetailsPage: React.FC = () => {
 
     const handleReviewPosted = (newReview: any) => {
         // Update the UI with the new review
+        const reviewWithUsername = {
+            ...newReview,
+            username: user?.username,
+        };
+
         if (reviewInfo) {
             setReviewInfo({
                 ...reviewInfo,
-                recentReviews: [newReview, ...(reviewInfo.recentReviews || [])],
+                recentReviews: [reviewWithUsername, ...(reviewInfo.recentReviews || [])],
                 // Update rating chart data (simplified)
                 ratingChartInfo: {
                     ...reviewInfo.ratingChartInfo,
-                    [newReview.rating]: (reviewInfo.ratingChartInfo[newReview.rating] || 0) + 1
+                    [reviewWithUsername.rating]: (reviewInfo.ratingChartInfo[reviewWithUsername.rating] || 0) + 1
                 }
             });
         } else {
             // Create new reviewInfo object if none exists
             setReviewInfo({
-                ratingChartInfo: { [newReview.rating]: 1 },
-                popularReviews: [newReview],
-                recentReviews: [newReview]
+                ratingChartInfo: { [reviewWithUsername.rating]: 1 },
+                popularReviews: [reviewWithUsername],
+                recentReviews: [reviewWithUsername]
             });
         }
         
