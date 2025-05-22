@@ -15,7 +15,18 @@ const useFeedService = () => {
     );
   };
 
-  return { getFollowerFeed };
+  const getForYouFeed = async (
+    profileId: string,
+    pageSize: number = 10
+  ): Promise<{ data: PageResult<ReviewProfileDetail> }> => {
+    return makeRequest(
+      "Feed",
+      `GetForYouFeed/${profileId}?pageSize=${pageSize}`,
+      "GET"
+    );
+  };
+
+  return { getFollowerFeed, getForYouFeed };
 };
 
 export default useFeedService;

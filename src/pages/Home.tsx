@@ -92,6 +92,118 @@ const Home: React.FC = () => {
     scrollPosition: 0
   });
 
+  // Add these new states for the For You tab specifically
+const [forYouReviews, setForYouReviews] = useState<ReviewProfileDetail[]>([]);
+const [forYouLoading, setForYouLoading] = useState(false);
+const [forYouHasMore, setForYouHasMore] = useState(true);
+const forYouFetchInProgressRef = useRef(false);
+
+// Add a separate fetch function for the For You tab
+const fetchForYouReviews = async () => {
+  // Use a separate ref for For You fetches
+  if (forYouFetchInProgressRef.current || !user?.profileId) return;
+
+  forYouFetchInProgressRef.current = true;
+  setForYouLoading(true);
+
+  try {
+    const response = await feedService.getForYouFeed(user.profileId);
+    const newReviews = response.data.result;
+
+    setForYouReviews(prev => [...prev, ...newReviews]);
+    setForYouHasMore(newReviews.length > 0);
+  } catch (e) {
+    console.error('Failed to fetch For You reviews:', e);
+    setForYouHasMore(false);
+  } finally {
+    forYouFetchInProgressRef.current = false;
+    setForYouLoading(false);
+  }
+};
+
+// Add a separate observer for the For You tab
+const forYouLastReviewElementRef = useCallback((node: HTMLDivElement) => {
+  if (forYouLoading || !forYouHasMore) return;
+
+  if (observer.current) observer.current.disconnect();
+
+  observer.current = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && forYouHasMore && !forYouLoading) {
+      fetchForYouReviews();
+    }
+  });
+
+  if (node) observer.current.observe(node);
+}, [forYouLoading, forYouHasMore]);
+
+// Add an effect to load For You content when tab is switched
+useEffect(() => {
+  if (activeTab === 'for-you' && forYouReviews.length === 0 && user?.profileId) {
+    fetchForYouReviews();
+  }
+}, [activeTab, user?.profileId]);
+
+// Update the Tab Switch effect to store state separately
+useEffect(() => {
+  if (restoredFromNavigationRef.current) {
+    restoredFromNavigationRef.current = false;
+    return;
+  }
+
+  // When switching to For You tab
+  if (activeTab === 'for-you') {
+    // Save Following tab state
+    setFollowingTabState({
+      reviews,
+      page,
+      hasMore,
+      loadedPages: loadedPagesRef.current,
+      scrollPosition: currentScrollPositionRef.current
+    });
+
+    // No need to restore For You state from followingTabState
+    // Let the For You component use its own state (forYouReviews, etc.)
+
+    // Restore scroll position
+    restoreScrollPosition(forYouTabState.scrollPosition);
+  } 
+  // When switching to Following tab
+  else {
+    // Save For You tab scroll position
+    setForYouTabState(prev => ({
+      ...prev,
+      scrollPosition: currentScrollPositionRef.current
+    }));
+
+    // Restore Following tab state
+    setReviews(followingTabState.reviews);
+    setPage(followingTabState.page);
+    setHasMore(followingTabState.hasMore);
+    loadedPagesRef.current = followingTabState.loadedPages;
+
+    // Restore scroll position
+    restoreScrollPosition(followingTabState.scrollPosition);
+  }
+
+  // If Following tab has no data, fetch it
+  if (activeTab === 'following' && followingTabState.reviews.length === 0 && user?.profileId) {
+    setTimeout(() => fetchReviews(), 0);
+  }
+}, [activeTab]);
+
+// Update the handler for For You reviews
+const handleForYouViewComments = (reviewId: string) => {
+  navigate(`/reviews/${reviewId}`, {
+    state: {
+      preserved: true,
+      forYou: true,
+      reviews: forYouReviews,
+      scrollPosition: window.scrollY,
+      from: location,
+    }
+  });
+};
+
   // Track scroll position in real-time
   useEffect(() => {
     // Update scroll position whenever user scrolls
@@ -315,47 +427,87 @@ const Home: React.FC = () => {
           Following
         </TabButton>
       </FeedToggle>
-      <Feed>
-        {activeTab === 'following' && (
-          <>
-            {reviews.map((review, index) => (
-              <div
-                ref={index === reviews.length - 1 ? lastReviewElementRef : undefined}
+     <Feed>
+      {activeTab === 'following' && (
+        <>
+          {reviews.map((review, index) => (
+            <div
+              ref={index === reviews.length - 1 ? lastReviewElementRef : undefined}
+              key={review.id}
+            >
+              <ReviewCard
+                onViewComments={handleViewComments}
                 key={review.id}
-              >
-                <ReviewCard
-                  onViewComments={handleViewComments}
-                  key={review.id}
-                  id={review.id}
-                  mediaId={review.mediaId}
-                  profileId={review.profileId}
-                  user={{
-                    name: review.username || '',
-                    username: review.username || '',
-                    avatar: "https://secure.gravatar.com/avatar/?s=134&d=identicon"
-                  }}
-                  media={{
-                    title: review.mediaTitle,
-                    type: review.mediaType as MediaType,
-                    cachedImagePath: review.mediaCachedImagePath,
-                    creator: review.mediaCreator,
-                  }}
-                  rating={review.rating}
-                  content={review.content}
-                  timestamp={new Date(review.createdDate).toLocaleDateString()}
-                  likes={0}
-                  comments={0}
-                />
-              </div>
-            ))}
-            {loading && (
-              <LoadingContainer>
-                <LoadingSpinner />
-              </LoadingContainer>
-            )}
-          </>
-        )}
-      </Feed>
+                id={review.id}
+                mediaId={review.mediaId}
+                profileId={review.profileId}
+                user={{
+                  name: review.username || '',
+                  username: review.username || '',
+                  avatar: "https://secure.gravatar.com/avatar/?s=134&d=identicon"
+                }}
+                media={{
+                  title: review.mediaTitle,
+                  type: review.mediaType as MediaType,
+                  cachedImagePath: review.mediaCachedImagePath,
+                  creator: review.mediaCreator,
+                }}
+                rating={review.rating}
+                content={review.content}
+                timestamp={new Date(review.createdDate).toLocaleDateString()}
+                likes={0}
+                comments={0}
+              />
+            </div>
+          ))}
+          {loading && (
+            <LoadingContainer>
+              <LoadingSpinner />
+            </LoadingContainer>
+          )}
+        </>
+      )}
+
+      {activeTab === 'for-you' && (
+        <>
+          {forYouReviews.map((review, index) => (
+            <div
+              ref={index === forYouReviews.length - 1 ? forYouLastReviewElementRef : undefined}
+              key={review.id}
+            >
+              <ReviewCard
+                onViewComments={handleForYouViewComments}
+                key={review.id}
+                id={review.id}
+                mediaId={review.mediaId}
+                profileId={review.profileId}
+                user={{
+                  name: review.username || '',
+                  username: review.username || '',
+                  avatar: "https://secure.gravatar.com/avatar/?s=134&d=identicon"
+                }}
+                media={{
+                  title: review.mediaTitle,
+                  type: review.mediaType as MediaType,
+                  cachedImagePath: review.mediaCachedImagePath,
+                  creator: review.mediaCreator,
+                }}
+                rating={review.rating}
+                content={review.content}
+                timestamp={new Date(review.createdDate).toLocaleDateString()}
+                likes={0}
+                comments={0}
+              />
+            </div>
+          ))}
+          {forYouLoading && (
+            <LoadingContainer>
+              <LoadingSpinner />
+            </LoadingContainer>
+          )}
+        </>
+      )}
+    </Feed>
     </>
   );
 };
