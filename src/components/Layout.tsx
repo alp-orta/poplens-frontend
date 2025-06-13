@@ -46,7 +46,7 @@ const SearchBar = styled.input`
   &:focus {
     outline: none;
     background-color: #15202B;
-    border: 1px solid #E91E63;
+    border: 1px solid #DB216D;
   }
 `;
 
@@ -70,7 +70,7 @@ const NavItem = styled(Link)`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: rgba(233, 30, 99, 0.1);
+    background-color: rgba(219, 33, 109, 0.1);
   }
 `;
 
@@ -79,8 +79,10 @@ const LogoContainer = styled.div`
   margin-bottom: 4px 0;
   
   img {
-    width: 100px;
-    height: 25px;
+    width: 100%;
+    height: auto;
+    max-width: 130px; // Adjust as needed
+    display: block;
   }
 `;
 
@@ -110,7 +112,7 @@ const LogButton = styled.button`
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(0deg, rgba(233,30,99,0.9), rgba(194,24,91,0.9));
+    background: linear-gradient(0deg, rgba(219,33,109,0.9), rgba(194,24,91,0.9));
     z-index: 1;
   }
 
@@ -164,8 +166,8 @@ const ThreeDots = styled.button`
   }
 
   &:hover {
-    background-color: rgba(233, 30, 99, 0.1);
-    color: #E91E63;
+    background-color: rgba(219, 33, 109, 0.1);
+    color: #DB216D;
   }
 
   &:hover + ${DropdownMenu}, &:hover ~ ${DropdownMenu}, & ~ ${DropdownMenu}:hover {
@@ -185,8 +187,8 @@ const DropdownItem = styled.button`
   gap: 8px;
 
   &:hover {
-    background-color: rgba(233, 30, 99, 0.1);
-    color: #E91E63;
+    background-color: rgba(219, 33, 109, 0.1);
+    color: #DB216D;
   }
 `;
 
@@ -220,7 +222,7 @@ const MainLoginPrompt = styled.div`
 const LoginLink = styled(Link)`
   display: inline-block;
   padding: 12px 24px;
-  background: linear-gradient(0deg, rgba(233,30,99,0.9), rgba(194,24,91,0.9));
+  background: linear-gradient(0deg, rgba(219,33,109,0.9), rgba(194,24,91,0.9));
   color: white;
   text-decoration: none;
   border-radius: 25px;
@@ -325,7 +327,7 @@ const SearchResultItem = styled.div`
   }
 
   &:hover {
-    background-color: rgba(233, 30, 99, 0.1);
+    background-color: rgba(219, 33, 109, 0.1);
   }
 `;
 

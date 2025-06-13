@@ -31,7 +31,7 @@ const SearchInput = styled.input`
 
   &:focus {
     outline: none;
-    border-color: #E91E63;
+    border-color: #DB216D;
   }
 `;
 
@@ -63,7 +63,7 @@ const Select = styled.select`
 
   &:focus {
     outline: none;
-    border-color: #E91E63;
+    border-color: #DB216D;
   }
 `;
 

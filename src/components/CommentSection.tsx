@@ -29,13 +29,13 @@ const CommentInput = styled.textarea`
   
   &:focus {
     outline: none;
-    border-color: #E91E63;
+    border-color: #DB216D;
   }
 `;
 
 const CommentButton = styled.button`
   align-self: flex-end;
-  background-color: #E91E63;
+  background-color: #DB216D;
   color: white;
   border: none;
   border-radius: 20px;
@@ -114,7 +114,7 @@ const ActionButton = styled.button`
   cursor: pointer;
   
   &:hover {
-    color: #E91E63;
+    color: #DB216D;
   }
 `;
 
@@ -139,7 +139,7 @@ const ReplySection = styled.div`
 const ShowRepliesButton = styled.button`
   background: none;
   border: none;
-  color: #E91E63;
+  color: #DB216D;
   cursor: pointer;
   font-size: 14px;
   display: flex;

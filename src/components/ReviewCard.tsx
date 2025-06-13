@@ -43,7 +43,7 @@ const Username = styled.span`
 `;
 
 const Rating = styled.div`
-  color: #E91E63;
+  color: #DB216D;
   font-weight: bold;
 `;
 
@@ -64,7 +64,7 @@ const ActionButton = styled.button`
   transition: color 0.2s;
 
   &:hover {
-    color: #E91E63;
+    color: #DB216D;
   }
 `;
 
@@ -155,8 +155,8 @@ const MenuItem = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: rgba(233, 30, 99, 0.1);
-    color: #E91E63;
+    background-color: rgba(219, 33, 109, 0.1);
+    color: #DB216D;
   }
 
   svg {
@@ -184,8 +184,8 @@ const ThreeDotButton = styled.button`
   }
 
   &:hover {
-    background-color: rgba(233, 30, 99, 0.1);
-    color: #E91E63;
+    background-color: rgba(219, 33, 109, 0.1);
+    color: #DB216D;
   }
 `;
 const DropdownContainer = styled.div`
@@ -211,7 +211,7 @@ const DropdownMenu = styled.div`
 `;
 
 const LikedActionButton = styled(ActionButton)`
-  color: #E91E63;
+  color: #DB216D;
 `;
 
 interface MediaInfoProps {

@@ -25,7 +25,7 @@ const TabButton = styled.button<{ active?: boolean }>`
   padding: 16px;
   background: none;
   border: none;
-  color: ${props => props.active ? '#E91E63' : 'white'};
+  color: ${props => props.active ? '#DB216D' : 'white'};
   font-size: 16px;
   font-weight: ${props => props.active ? 'bold' : 'normal'};
   cursor: pointer;
@@ -38,7 +38,7 @@ const TabButton = styled.button<{ active?: boolean }>`
     left: 0;
     width: 100%;
     height: 4px;
-    background-color: #E91E63;
+    background-color: #DB216D;
     display: ${props => props.active ? 'block' : 'none'};
   }
 `;

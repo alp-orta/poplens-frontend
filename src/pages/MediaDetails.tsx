@@ -90,7 +90,7 @@ const RatingLabel = styled.span`
 
 const RatingBar = styled.div<{ width: number }>`
   height: 20px;
-  background-color: #E91E63;
+  background-color: #DB216D;
   width: ${props => props.width}%;
   border-radius: 4px;
   max-width: 100%;
@@ -134,7 +134,7 @@ const NoReviewsMessage = styled.p`
 `;
 
 const BeFirstButton = styled.button`
-  background-color: #E91E63;
+  background-color: #DB216D;
   color: white;
   padding: 12px 24px;
   border-radius: 25px;

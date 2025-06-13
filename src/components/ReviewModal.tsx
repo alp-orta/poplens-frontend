@@ -75,7 +75,7 @@ const TypeButton = styled.button<{ active: boolean }>`
     right: 0;
     bottom: 0;
     background: ${props => props.active ?
-    'linear-gradient(0deg, rgba(233,30,99,0.8), rgba(233,30,99,0.4))' :
+    'linear-gradient(0deg, rgba(219,33,109,0.8), rgba(219,33,109,0.4))' :
     'linear-gradient(0deg, rgba(0,0,0,0.8), rgba(0,0,0,0.4))'};
   }
 `;

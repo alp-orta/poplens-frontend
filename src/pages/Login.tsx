@@ -53,7 +53,7 @@ const Input = styled.input`
   
   &:focus {
     outline: none;
-    border-color: #E91E63;
+    border-color: #DB216D;
   }
 `;
 
@@ -63,7 +63,7 @@ const Button = styled.button`
   padding: 12px;
   border-radius: 25px;
   border: none;
-  background-color: #E91E63;
+  background-color: #DB216D;
   color: white;
   font-size: 16px;
   font-weight: bold;
@@ -85,7 +85,7 @@ const SignUpLink = styled.p`
   color: #657786;
   
   a {
-    color: #E91E63;
+    color: #DB216D;
     text-decoration: none;
     
     &:hover {
@@ -129,7 +129,7 @@ const Login: React.FC = () => {
     <LoginContainer>
       <LogoSection>
         {/* Add your logo/branding here */}
-        <svg width="200" height="200" viewBox="0 0 24 24" fill="#E91E63">
+        <svg width="200" height="200" viewBox="0 0 24 24" fill="#DB216D">
           <path d="M12 2L1 12h3v9h6v-6h4v6h6v-9h3L12 2z"/>
         </svg>
       </LogoSection>

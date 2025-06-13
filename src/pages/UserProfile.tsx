@@ -80,7 +80,7 @@ const FollowButton = styled.button<{ isLoading?: boolean }>`
   float: right;
   padding: 8px 16px;
   border-radius: 20px;
-  background-color: ${props => props.isLoading ? '#7d1038' : '#E91E63'};
+  background-color: ${props => props.isLoading ? '#7d1038' : '#DB216D'};
   color: white;
   border: none;
   font-weight: bold;
@@ -103,7 +103,7 @@ const Tab = styled.button<{ active?: boolean }>`
   padding: 16px;
   background: none;
   border: none;
-  color: ${props => props.active ? '#E91E63' : 'white'};
+  color: ${props => props.active ? '#DB216D' : 'white'};
   font-weight: ${props => props.active ? 'bold' : 'normal'};
   cursor: pointer;
   position: relative;
@@ -115,7 +115,7 @@ const Tab = styled.button<{ active?: boolean }>`
     left: 0;
     width: 100%;
     height: 4px;
-    background-color: #E91E63;
+    background-color: #DB216D;
     display: ${props => props.active ? 'block' : 'none'};
   }
 `;

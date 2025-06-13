@@ -22,7 +22,7 @@ const RefreshButton = styled.button`
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    color: #E91E63;
+    color: #DB216D;
   }
 
   &:disabled {
@@ -130,7 +130,7 @@ const SectionTitle = styled.h3`
 
 const RecommendationsHeader = styled.h2`
   font-size: 15px; /* Reduced from 16px */
-  color: #E91E63;
+  color: #DB216D;
   margin: 0;
   padding-left: 0; /* Ensure left alignment */
 `;

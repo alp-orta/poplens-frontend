@@ -27,7 +27,7 @@ const BackButton = styled.button`
   margin-bottom: 20px;
   
   &:hover {
-    color: #E91E63;
+    color: #DB216D;
   }
 `;
 
