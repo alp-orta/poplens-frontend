@@ -24,7 +24,7 @@ const MainContent = styled.main`
   max-width: 600px;
   border-right: 1px solid #38444d;
   margin-left: 20%; // Match Sidebar width
-  margin-right: 25%; // Match RightSidebar width
+  margin-right: 32%; // Match RightSidebar width
 `;
 const SearchContainer = styled.div`
   position: relative;
@@ -247,10 +247,9 @@ const LeftSidebar = styled.div`
 const RightSidebar = styled.div`
   position: fixed;
   right: 0;
-  width: 25%;
+  width: 32%;
   height: 100vh;
   padding: 20px;
-  border-left: 1px solid #38444d;
   overflow-y: auto;
 
   /* Custom Scrollbar Styling */

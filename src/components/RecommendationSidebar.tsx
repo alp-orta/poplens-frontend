@@ -137,10 +137,11 @@ const RecommendationsHeader = styled.h2`
 
 const HeaderContainer = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px; /* Reduced from 15px */
-  padding-left: 0; /* Ensure left alignment */
+  justify-content: flex-start; /* Left-align header content */
+  gap: 80px;                  /* Space between text and button */
+  margin-bottom: 12px;
+  padding-left: 0;
 `;
 const MediaRecommendations: React.FC = () => {
     const { user } = useAuthContext();
