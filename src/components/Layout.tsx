@@ -9,6 +9,7 @@ import useSearchService from '../hooks/useSearchService';
 import Media from '../models/Media/Media';
 import { User } from '../models/User';
 import { MediaType } from '../models/MediaType';
+import RecommendationSidebar from './RecommendationSidebar';
 
 
 const LayoutContainer = styled.div`
@@ -242,13 +243,36 @@ const LeftSidebar = styled.div`
 `;
 
 const RightSidebar = styled.div`
-  width: 25%;
-  padding: 20px;
   position: fixed;
-  top: 0;
   right: 0;
+  width: 25%;
   height: 100vh;
-  overflow-y: auto; // Allow scrolling if content is too tall
+  padding: 20px;
+  border-left: 1px solid #38444d;
+  overflow-y: auto;
+
+  /* Custom Scrollbar Styling */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #1a2734;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #38444d;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #4c5c6d;
+    }
+  }
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #38444d #1a2734;
 `;
 
 const ResultTitle = styled.span`
@@ -576,6 +600,7 @@ const Layout: React.FC = () => {
             </SearchResults>
           )}
         </SearchContainer>
+        <RecommendationSidebar />
       </RightSidebar>
       <ReviewModal
         isOpen={isReviewModalOpen}
