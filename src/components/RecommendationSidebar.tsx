@@ -157,10 +157,11 @@ const MediaRecommendations: React.FC = () => {
     const fetchRecommendations = async (isRefresh = false) => {
         if (!user?.profileId || (fetchedRef.current && !isRefresh)) return;
 
-        if (isRefresh) {
-            setRefreshing(true);
-        } else {
+        // Only set loading on initial load, not during refresh
+        if (!isRefresh) {
             setLoading(true);
+        } else {
+            setRefreshing(true);
         }
 
         fetchedRef.current = true;
@@ -173,6 +174,7 @@ const MediaRecommendations: React.FC = () => {
                 feedService.getMediaRecommendations(user.profileId, 'game')
             ]);
 
+            // Only update state after successful fetch
             setFilmRecommendations(filmsResponse.data);
             setBookRecommendations(booksResponse.data);
             setGameRecommendations(gamesResponse.data);
@@ -198,16 +200,16 @@ const MediaRecommendations: React.FC = () => {
 
     const getMediaPath = (type: MediaType): string => {
         switch (type) {
-        case MediaType.FILM: return 'films';
-        case MediaType.BOOK: return 'books';
-        case MediaType.GAME: return 'games';
-        default: return '';
+            case MediaType.FILM: return 'films';
+            case MediaType.BOOK: return 'books';
+            case MediaType.GAME: return 'games';
+            default: return '';
         }
     };
 
     const handleMediaClick = (item: Media) => {
         const path = `/${getMediaPath(item.type)}/${item.title.replace(/ /g, '-').toLowerCase()}`;
-        
+
         navigate(path, {
             state: {
                 media: item // Pass the full media object
@@ -220,7 +222,7 @@ const MediaRecommendations: React.FC = () => {
             case MediaType.GAME:
                 return `https://images.igdb.com/igdb/image/upload/t_cover_big${media.cachedImagePath}`;
             case MediaType.BOOK:
-                return `https://books.google.com/books/content?id=${media.cachedImagePath}&printsec=frontcover&img=1&zoom=1`;
+                return `https://books.google.com/books/content?id=${media.cachedImagePath}&printsec=frontcover&img=1&zoom=1&fife=w800`;
             case MediaType.FILM:
                 return `https://image.tmdb.org/t/p/w500${media.cachedImagePath}`;
             default:
@@ -264,7 +266,7 @@ const MediaRecommendations: React.FC = () => {
                     disabled={loading || refreshing}
                     title="Refresh recommendations"
                 >
-                    {refreshing ? <LoadingSpinner /> : <RefreshIcon />}
+                    {refreshing ? <LoadingSpinner size={16}/> : <RefreshIcon />}
                 </RefreshButton>
             </HeaderContainer>
 

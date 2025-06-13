@@ -221,7 +221,7 @@ const Medias: React.FC<MediaPageProps> = ({ mediaType, title, genreOptions }) =>
       case MediaType.GAME:
         return `https://images.igdb.com/igdb/image/upload/t_cover_big${media.cachedImagePath}`;
       case MediaType.BOOK:
-        return `https://books.google.com/books/content?id=${media.cachedImagePath}&printsec=frontcover&img=1&zoom=1`;
+        return `https://books.google.com/books/content?id=${media.cachedImagePath}&printsec=frontcover&img=1&zoom=1&fife=w800`;
       case MediaType.FILM:
         return `https://image.tmdb.org/t/p/w500${media.cachedImagePath}`;
       default:
