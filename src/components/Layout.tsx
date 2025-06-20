@@ -200,7 +200,7 @@ const SidebarCurtain = styled.div`
   bottom: 0;
   backdrop-filter: blur(4px);
   background: rgba(21,32,43,0.7);
-  z-index: 10;
+  z-index: 100;
 `;
 
 // Add new styled component for main content login prompt
@@ -450,9 +450,7 @@ const Layout: React.FC = () => {
   return (
     <LayoutContainer>
       <LeftSidebar>
-        {!user && (
-          <SidebarCurtain />
-        )}
+        {!user && <SidebarCurtain /> }
         <LogoContainer>
           <img src={logo} alt="PopLens Logo" />
         </LogoContainer>
@@ -517,9 +515,7 @@ const Layout: React.FC = () => {
         {(user || (!user && isAuthPage)) && <Outlet />}
       </MainContent>
       <RightSidebar>
-        {!user && (
-          <SidebarCurtain />
-        )}
+        {!user && <SidebarCurtain /> }
         <SearchContainer ref={searchContainerRef}>
           <SearchIcon>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -601,7 +597,7 @@ const Layout: React.FC = () => {
             </SearchResults>
           )}
         </SearchContainer>
-        <RecommendationSidebar />
+        {user && <RecommendationSidebar />}
       </RightSidebar>
       <ReviewModal
         isOpen={isReviewModalOpen}

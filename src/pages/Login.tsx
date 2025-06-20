@@ -4,13 +4,9 @@ import useAuthService from '../hooks/useAuthService';
 import styled from 'styled-components';
 import { useAuthContext } from '../managers/AuthContext';
 import { User } from '../models/User';
+import logo from '../assets/PopLensLogo.png';
 
-const LoginContainer = styled.div`
-  display: flex;
-  min-height: 100vh;
-  background-color: #15202B;
-  color: white;
-`;
+
 
 const LogoSection = styled.div`
   flex: 1;
@@ -23,22 +19,6 @@ const LogoSection = styled.div`
   }
 `;
 
-const FormSection = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 40px;
-  
-  @media (max-width: 768px) {
-    flex: 1;
-  }
-`;
-
-const Title = styled.h1`
-  font-size: 31px;
-  margin-bottom: 40px;
-`;
 
 const Input = styled.input`
   width: 100%;
@@ -94,6 +74,34 @@ const SignUpLink = styled.p`
   }
 `;
 
+const LoginContainer = styled.div`
+  display: flex;
+  min-height: 100vh;
+  background-color: #15202B;
+  color: white;
+  justify-content: center;   // Center horizontally
+  align-items: center;       // Center vertically
+`;
+
+const FormSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;       // Center form content
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+`;
+
+const Title = styled.h1`
+  font-size: 31px;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+`;
+
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -127,14 +135,12 @@ const Login: React.FC = () => {
 
   return (
     <LoginContainer>
-      <LogoSection>
-        {/* Add your logo/branding here */}
-        <svg width="200" height="200" viewBox="0 0 24 24" fill="#DB216D">
-          <path d="M12 2L1 12h3v9h6v-6h4v6h6v-9h3L12 2z"/>
-        </svg>
-      </LogoSection>
       <FormSection>
-        <Title>Sign in to PopLens</Title>
+        <Title>Sign in to <img
+          src={logo}
+          alt="PopLens Logo"
+          style={{ height: "36px", width: "auto", verticalAlign: "middle", marginBottom: "-10px"  }}
+        /></Title>
         <form onSubmit={handleLogin}>
           {error && <ErrorMessage>{error}</ErrorMessage>}
           <Input
